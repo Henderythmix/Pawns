@@ -11,10 +11,11 @@ public enum aiState
 }
 
 [System.Serializable]
-public class player
+public class AI
 {
     public float health = 100;
     public float damageOutput = 25;
     public bool canSeeHiddenEnemies = false;
     public float movementSpeed = 5;
+    public aiState currentState;
 }

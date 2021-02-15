@@ -4,12 +4,13 @@ using UnityEngine;
 
 public class sPlayerController : MonoBehaviour
 {
-    public player playerStats;
+    public AI playerStats;
 
     [Tooltip("The point in which the projectiles come out of.")]
     public Transform shootPoint;
     public aiState playerCharState;
     public Transform enemyFocusingOn;
+    public bool playerUnit;
 
     Quaternion orginialRotation;
 
