@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class sEntity : MonoBehaviour
 {
+    [Header("Player Status")]
     public float Health;
     public float MaxHealth;
     public float Defence;
