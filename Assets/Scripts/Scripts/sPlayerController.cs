@@ -11,7 +11,8 @@ public class sPlayerController : MonoBehaviour
     public KeyCode East;
 
     [Header("Status")]
-    public float Speed;
+    public float MovementSpeed;
+    public float ShootSlowness;
 
     [Header("Other")]
     public AI playerStats;
@@ -27,6 +28,10 @@ public class sPlayerController : MonoBehaviour
     Quaternion orginialRotation;
 
     Transform PlayerPosition;
+    public Transform PlayerModel;
+    public Transform Direction;
+    public GameObject LaserBolt;
+    public Animator PlayerAnimator;
 
     void Start() {
         PlayerPosition = gameObject.GetComponent<Transform>();
@@ -34,7 +39,7 @@ public class sPlayerController : MonoBehaviour
 
     void Update() {
         if (BeingControlled) {
-
+            // Movement
             int XVelocity = 0;
             int YVelocity = 0;
 
@@ -54,8 +59,32 @@ public class sPlayerController : MonoBehaviour
                 XVelocity = 0;
             }
 
-            PlayerPosition.position += new Vector3(XVelocity * Speed * Time.deltaTime, 0, YVelocity * Speed * Time.deltaTime);
+            PlayerPosition.position += new Vector3(XVelocity * MovementSpeed * Time.deltaTime, 0, YVelocity * MovementSpeed * Time.deltaTime);
+
+            if (XVelocity != 0 || YVelocity != 0) {
+                PlayerAnimator.SetBool("Moving", true);
+                Direction.localPosition = new Vector3(XVelocity*1.5f, 0, YVelocity*1.5f);
+            } else {
+                PlayerAnimator.SetBool("Moving", false);
+            }
+
+            PlayerModel.LookAt(Direction);
+
+            //Shooting
+            if (Input.GetMouseButtonDown(0)) {
+                StartCoroutine("Shooting"); // Still Kinda new with Coroutines, so expect them to look a bit like this :P
+            }
+            if (Input.GetMouseButtonUp(0)) {
+                StopCoroutine("Shooting");
+            }
         }
     }
 
+    IEnumerator Shooting() {
+        while (true) {
+        Instantiate(LaserBolt, Direction.position, PlayerModel.rotation);
+
+        yield return new WaitForSeconds(ShootSlowness);
+        }
+    }
 }
