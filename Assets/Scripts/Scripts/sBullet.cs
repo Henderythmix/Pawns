@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class sBullet : MonoBehaviour
 {
-    public float speed = 5;
+    public float speed = 25;
     public LayerMask enemy;
     public float damage;
     void Update()

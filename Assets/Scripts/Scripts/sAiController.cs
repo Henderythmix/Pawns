@@ -16,7 +16,7 @@ public class sAiController : MonoBehaviour
 
     [Tooltip("At what distance should the AI stop moving if moving")]
     public float stopMovingAt = 3;
-
+    public float firingRate = 0.25f;
     public GameObject bulletPrefab;
     public float viewRadius;
     [Range(0, 360)]
@@ -45,6 +45,12 @@ public class sAiController : MonoBehaviour
     {
         if (this.aiType.currentState.Equals(aiState.COMBAT))
         {
+            //if (visibleTargets.Count == 0)
+            //{
+            //    Debug.Log("Found no more targets, going back to finding");
+            //    this.aiType.currentState = aiState.FINDING;
+            //    return;
+            //}
             Quaternion lookRotation = Quaternion.LookRotation(destination.position);
             lookRotation.y = 0;
             transform.rotation = Quaternion.RotateTowards(transform.rotation, lookRotation, rotationSpeed * Time.deltaTime);
@@ -72,10 +78,15 @@ public class sAiController : MonoBehaviour
                 destination = closestEnemy;
             }
 
-            if (bulletPrefab)
-            {
-                Shoot(new Vector3(destination.position.x, destination.position.y + 2, destination.position.z));
-            }
+            //if (bulletPrefab)
+            //{
+            //    Debug.Log("Firing on the enemy");
+            //    //Shoot(new Vector3(destination.position.x, destination.position.y + 2, destination.position.z));
+            //}
+            //else
+            //{
+            //    Debug.LogError("Enemy does not have the projectile set on the sAiController script");
+            //}
         }
         else if (this.aiType.currentState.Equals(aiState.FINDING))
         {
@@ -107,12 +118,26 @@ public class sAiController : MonoBehaviour
         }
     }
 
-    void Shoot(Vector3 target)
+    IEnumerator ShootWhenReady()
+    {
+        while (this.aiType.currentState.Equals(aiState.COMBAT) && bulletPrefab)
+        {
+            yield return new WaitForSeconds(firingRate);
+            Shoot();
+        }
+
+        if (!bulletPrefab)
+        {
+            Debug.LogError("This enemy does not have a projectile on the sAiController Bullet Prefab variable");
+        }
+    }
+
+    void Shoot()
     {
         sBullet bullet = Instantiate(bulletPrefab).GetComponent<sBullet>();
         bullet.damage = this.aiType.damageOutput;
         bullet.transform.position = shootPoint.position;
-        bullet.transform.LookAt(target);
+        //bullet.transform.LookAt(target);
     }
 
     IEnumerator FindTargetWithDelay(float delay)
@@ -120,6 +145,7 @@ public class sAiController : MonoBehaviour
         while (true)
         {
             yield return new WaitForSeconds(delay);
+            // If this ai is not being controlled
             if (!controlled)
                 FindVisibleTargets();
             else if (visibleTargets.Count > 0)
@@ -127,9 +153,28 @@ public class sAiController : MonoBehaviour
 
             if (visibleTargets.Count > 0)
             {
+                Debug.Log("Found a enemy, entering combat");
                 CollectOrginals();
                 this.aiType.currentState = aiState.COMBAT;
+                StartCoroutine("ShootWhenReady");
             }
+            else if (this.aiType.currentState.Equals(aiState.COMBAT))
+            {
+                Debug.Log("Found no more targets, going back to finding");
+                this.aiType.currentState = aiState.FINDING;
+            }
+        }
+    }
+
+    void ReturnToOriginals()
+    {
+        if (stayPut)
+        {
+            transform.rotation = orgRotation;
+        }
+        else
+        {
+            aiAgent.destination = originalDestination;
         }
     }
 
@@ -174,27 +219,27 @@ public class sAiController : MonoBehaviour
 
     private void OnDrawGizmosSelected()
     {
-        //if (turnOn)
-        //{
-        //    //Debug.Log(" Selected ");
-        //    //SFieldOfView fow = (SFieldOfView)target;
-        //    Handles.color = Color.white;
-        //    Handles.DrawWireArc(transform.position, Vector3.up, Vector3.forward, 360, viewRadius);
-        //    Vector3 viewAngleA = DirFromAnagle(-viewAngle / 2, false);
-        //    Vector3 viewAngleB = DirFromAnagle(viewAngle / 2, false);
+        if (turnOn)
+        {
+            //Debug.Log(" Selected ");
+            //SFieldOfView fow = (SFieldOfView)target;
+            Handles.color = Color.white;
+            Handles.DrawWireArc(transform.position, Vector3.up, Vector3.forward, 360, viewRadius);
+            Vector3 viewAngleA = DirFromAnagle(-viewAngle / 2, false);
+            Vector3 viewAngleB = DirFromAnagle(viewAngle / 2, false);
 
-        //    Handles.DrawLine(transform.position, transform.position + viewAngleA * viewRadius);
-        //    Handles.DrawLine(transform.position, transform.position + viewAngleB * viewRadius);
+            Handles.DrawLine(transform.position, transform.position + viewAngleA * viewRadius);
+            Handles.DrawLine(transform.position, transform.position + viewAngleB * viewRadius);
 
-        //    Handles.color = Color.red;
+            Handles.color = Color.red;
 
-        //    if (visibleTargets.Count > 0)
-        //    {
-        //        foreach (Transform visibleTarget in visibleTargets)
-        //        {
-        //            Handles.DrawLine(transform.position, visibleTarget.position);
-        //        }
-        //    }
-        //}
+            if (visibleTargets.Count > 0)
+            {
+                foreach (Transform visibleTarget in visibleTargets)
+                {
+                    Handles.DrawLine(transform.position, visibleTarget.position);
+                }
+            }
+        }
     }
 }
