@@ -8,6 +8,7 @@ public class OtherControls : MonoBehaviour
     [Header("Soldier Controlling")]
     public GameObject[] Soldiers;
     public KeyCode NextSoldier;
+    public KeyCode[] selectSoldiers;
     public KeyCode PreviousSoldier;
     public int SelectedSoldier = 0;
 
@@ -45,6 +46,19 @@ public class OtherControls : MonoBehaviour
 
             CinemachineCamera.Follow = Soldiers[SelectedSoldier].GetComponent<Transform>();
             Soldiers[SelectedSoldier].GetComponent<sPlayerController>().BeingControlled = true;
+        }
+
+        for (int i = 0; i < selectSoldiers.Length; i++)
+        {
+            if (Input.GetKeyDown(selectSoldiers[i]))
+            {
+                Soldiers[SelectedSoldier].GetComponent<sPlayerController>().BeingControlled = false;
+                
+                SelectedSoldier = i;
+                
+                CinemachineCamera.Follow = Soldiers[SelectedSoldier].GetComponent<Transform>();
+                Soldiers[SelectedSoldier].GetComponent<sPlayerController>().BeingControlled = true;
+            }
         }
     }
 
