@@ -51,6 +51,7 @@ MonoBehaviour:
   components:
   - {fileID: -565571660157343346}
   - {fileID: 7127558408150512509}
+  - {fileID: 2515724059398995314}
 --- !u!114 &2515724059398995314
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -66,11 +67,11 @@ MonoBehaviour:
   active: 1
   m_AdvancedMode: 0
   postExposure:
-    m_OverrideState: 0
-    m_Value: 0
+    m_OverrideState: 1
+    m_Value: 0.83
   contrast:
-    m_OverrideState: 0
-    m_Value: 0
+    m_OverrideState: 1
+    m_Value: 13
     min: -100
     max: 100
   colorFilter:
@@ -85,8 +86,8 @@ MonoBehaviour:
     min: -180
     max: 180
   saturation:
-    m_OverrideState: 0
-    m_Value: 0
+    m_OverrideState: 1
+    m_Value: -9
     min: -100
     max: 100
 --- !u!114 &7127558408150512509
@@ -104,24 +105,24 @@ MonoBehaviour:
   active: 1
   m_AdvancedMode: 0
   threshold:
-    m_OverrideState: 1
+    m_OverrideState: 0
     m_Value: 0.9
     min: 0
   intensity:
     m_OverrideState: 1
-    m_Value: 4.74
+    m_Value: 12.18
     min: 0
   scatter:
     m_OverrideState: 1
-    m_Value: 0.7
+    m_Value: 0.141
     min: 0
     max: 1
   clamp:
-    m_OverrideState: 1
+    m_OverrideState: 0
     m_Value: 65472
     min: 0
   tint:
-    m_OverrideState: 1
+    m_OverrideState: 0
     m_Value: {r: 1, g: 1, b: 1, a: 1}
     hdr: 0
     showAlpha: 0
