@@ -5,7 +5,7 @@ using UnityEngine;
 public class sBullet : MonoBehaviour
 {
     public float speed = 25;
-    public LayerMask enemy;
+    public string enemy;
     public float damage;
     void Update()
     {
@@ -14,8 +14,9 @@ public class sBullet : MonoBehaviour
 
     private void OnCollisionEnter(Collision collision)
     {
-        if (collision.gameObject.layer.Equals(enemy))
+        if (collision.gameObject.CompareTag(enemy))
         {
+            //Debug.Log("Sending take damage");
             collision.gameObject.GetComponent<sAiController>().TakeDamage(damage);
         }
         Destroy(gameObject);

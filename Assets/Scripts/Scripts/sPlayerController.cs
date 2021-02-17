@@ -4,87 +4,87 @@ using UnityEngine;
 
 public class sPlayerController : MonoBehaviour
 {
-    [Header("Controls")]
-    public KeyCode North;
-    public KeyCode South;
-    public KeyCode West;
-    public KeyCode East;
+    public KeyCode leavePlayerCharacter;
+    public float characterSpeed = 5.0f;
+    
+    float attackCooldownTime;
+    sAiController playerCharacterScript;
+    bool attackOnCooldown = false;
 
-    [Header("Status")]
-    public float MovementSpeed;
-    public float ShootSlowness;
-
-    [Header("Other")]
-    public AI playerStats;
-
-    [Tooltip("The point in which the projectiles come out of.")]
-    public Transform shootPoint;
-    public aiState playerCharState;
-    public Transform enemyFocusingOn;
-    public bool playerUnit;
-
-    public bool BeingControlled;
-
-    Quaternion orginialRotation;
-
-    Transform PlayerPosition;
-    public Transform PlayerModel;
-    public Transform Direction;
-    public GameObject LaserBolt;
-    public Animator PlayerAnimator;
-
-    void Start() {
-        PlayerPosition = gameObject.GetComponent<Transform>();
+    private void Awake()
+    {
+        playerCharacterScript = gameObject.GetComponent<sAiController>();
     }
 
-    void Update() {
-        if (BeingControlled) {
-            // Movement
-            int XVelocity = 0;
-            int YVelocity = 0;
+    private void OnMouseDown()
+    {
+        playerCharacterScript.controlled = true;
+        sCamera.instance.playerCharacterSelected = transform;
+        attackCooldownTime = playerCharacterScript.aiType.attackRate;
+        // Stops the player character from randomly shooting after just trying to click on the character.
+        StartCoroutine("PlayerAttackCooldown", 0.05f);
+    }
 
-            if (Input.GetKey(North)) {
-                YVelocity = 1;
-            } else if (Input.GetKey(South)) {
-                YVelocity = -1;                
-            } else {
-                YVelocity = 0;
-            }
+    private void Update()
+    {
+        if (playerCharacterScript.controlled)
+        {
+            Rotation();
+            Move();
             
-            if (Input.GetKey(West)) {
-                XVelocity = -1;
-            } else if (Input.GetKey(East)) {
-                XVelocity = 1;
-            } else {
-                XVelocity = 0;
+            if (Input.GetKey(leavePlayerCharacter))
+            {
+                sCamera.instance.playerCharacterSelected = null;
+                playerCharacterScript.controlled = false;
             }
 
-            PlayerPosition.position += new Vector3(XVelocity * MovementSpeed * Time.deltaTime, 0, YVelocity * MovementSpeed * Time.deltaTime);
+            if (Input.GetMouseButton(0) && !attackOnCooldown)
+            {
+                playerCharacterScript.Shoot();
+                StartCoroutine("PlayerAttackCooldown", attackCooldownTime);
+            }
+        }
 
-            if (XVelocity != 0 || YVelocity != 0) {
-                PlayerAnimator.SetBool("Moving", true);
-                Direction.localPosition = new Vector3(XVelocity*1.5f, 0, YVelocity*1.5f);
-            } else {
-                PlayerAnimator.SetBool("Moving", false);
+
+    }
+
+    IEnumerator PlayerAttackCooldown(float time)
+    {
+        attackOnCooldown = true;
+        yield return new WaitForSeconds(time);
+        attackOnCooldown = false;
+    }
+
+    void Move()
+    {
+        float vertical = Input.GetAxis("Vertical");
+        float horizontal = Input.GetAxis("Horizontal");
+
+        if (vertical != 0 || horizontal != 0)
+        {
+            float actualSpeed = characterSpeed;
+            if (vertical != 0 && horizontal != 0)
+            {
+                actualSpeed *= 0.5f;
             }
 
-            PlayerModel.LookAt(Direction);
-
-            //Shooting
-            if (Input.GetMouseButtonDown(0)) {
-                StartCoroutine("Shooting"); // Still Kinda new with Coroutines, so expect them to look a bit like this :P
-            }
-            if (Input.GetMouseButtonUp(0)) {
-                StopCoroutine("Shooting");
-            }
+            Debug.Log(actualSpeed);
+            transform.position += (transform.forward * vertical) * actualSpeed * Time.deltaTime;
+            transform.position += (transform.right * horizontal) * actualSpeed * Time.deltaTime;
         }
     }
 
-    IEnumerator Shooting() {
-        while (true) {
-        Instantiate(LaserBolt, Direction.position, PlayerModel.rotation);
+    void Rotation()
+    {
+        Ray cameraRay = Camera.main.ScreenPointToRay(Input.mousePosition);
+        Plane groundPlane = new Plane(Vector3.up, Vector3.zero);
+        float rayLength;
 
-        yield return new WaitForSeconds(ShootSlowness);
+        if (groundPlane.Raycast(cameraRay, out rayLength))
+        {
+            Vector3 pointToLook = cameraRay.GetPoint(rayLength);
+
+            transform.LookAt(new Vector3(pointToLook.x, transform.position.y, pointToLook.z));
         }
     }
 }

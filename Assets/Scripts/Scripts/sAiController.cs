@@ -16,7 +16,6 @@ public class sAiController : MonoBehaviour
 
     [Tooltip("At what distance should the AI stop moving if moving")]
     public float stopMovingAt = 3;
-    public float firingRate = 0.25f;
     public GameObject bulletPrefab;
     public float viewRadius;
     [Range(0, 360)]
@@ -34,7 +33,7 @@ public class sAiController : MonoBehaviour
 
     Vector3 originalDestination;
     NavMeshAgent aiAgent;
-    Quaternion orgRotation;
+    [HideInInspector] public Quaternion orgRotation;
     private void Start()
     {
         StartCoroutine(FindTargetWithDelay(.2f));
@@ -51,17 +50,9 @@ public class sAiController : MonoBehaviour
             //    this.aiType.currentState = aiState.FINDING;
             //    return;
             //}
-            Quaternion lookRotation = Quaternion.LookRotation(destination.position);
-            lookRotation.y = 0;
-            transform.rotation = Quaternion.RotateTowards(transform.rotation, lookRotation, rotationSpeed * Time.deltaTime);
-            if (!stayPut && aiAgent.remainingDistance > stopMovingAt)
-            {
-                aiAgent.destination = destination.position;
-            }
 
-            // Find the closest enemy if there's more then one
             Transform closestEnemy = visibleTargets[0];
-            if (visibleTargets.Count > 1)
+            if (visibleTargets.Count > 1)            // Find the closest enemy if there's more then one
             {
                 for (int i = 0; i < visibleTargets.Count; i++)
                 {
@@ -73,9 +64,32 @@ public class sAiController : MonoBehaviour
                     }
                 }
             }
-            if (destination != closestEnemy)
+
+            Quaternion lookRotation = Quaternion.LookRotation(destination.position);
+            lookRotation.y = 0;
+            transform.rotation = Quaternion.RotateTowards(transform.rotation, lookRotation, rotationSpeed * Time.deltaTime);
+            if (!stayPut)
             {
-                destination = closestEnemy;
+                if (aiAgent.remainingDistance > stopMovingAt)
+                {
+                    if (aiAgent.isStopped)
+                        aiAgent.isStopped = false;
+                    aiAgent.destination = destination.position;
+                }
+                else
+                {
+                    aiAgent.isStopped = true;
+                }
+                //Debug.Log(aiAgent.remainingDistance);
+
+                if (destination != closestEnemy)
+                {
+                    destination = closestEnemy;
+                }
+            }
+            else
+            {
+                transform.LookAt(closestEnemy);
             }
 
             //if (bulletPrefab)
@@ -112,6 +126,7 @@ public class sAiController : MonoBehaviour
     public void TakeDamage(float damage)
     {
         this.aiType.health -= damage;
+        Debug.Log(gameObject.name + " is taking damage");
         if (this.aiType.health <= 0)
         {
             Destroy(gameObject);
@@ -122,7 +137,7 @@ public class sAiController : MonoBehaviour
     {
         while (this.aiType.currentState.Equals(aiState.COMBAT) && bulletPrefab)
         {
-            yield return new WaitForSeconds(firingRate);
+            yield return new WaitForSeconds(this.aiType.attackRate);
             Shoot();
         }
 
@@ -132,9 +147,13 @@ public class sAiController : MonoBehaviour
         }
     }
 
-    void Shoot()
+    public void Shoot()
     {
         sBullet bullet = Instantiate(bulletPrefab).GetComponent<sBullet>();
+        bullet.damage = this.aiType.damageOutput;
+        bullet.enemy = this.aiType.enemy;
+        bullet.transform.rotation = shootPoint.rotation;
+        //bullet.GetComponent<Rigidbody>().AddForce(transform.forward * bullet.speed);
         bullet.transform.position = shootPoint.position;
         //bullet.transform.LookAt(target);
     }
@@ -152,14 +171,14 @@ public class sAiController : MonoBehaviour
 
             if (visibleTargets.Count > 0)
             {
-                Debug.Log("Found a enemy, entering combat");
+                //Debug.Log("Found a enemy, entering combat");
                 CollectOrginals();
                 this.aiType.currentState = aiState.COMBAT;
                 StartCoroutine("ShootWhenReady");
             }
             else if (this.aiType.currentState.Equals(aiState.COMBAT))
             {
-                Debug.Log("Found no more targets, going back to finding");
+                //Debug.Log("No more targets, going back to finding");
                 this.aiType.currentState = aiState.FINDING;
             }
         }
@@ -199,7 +218,7 @@ public class sAiController : MonoBehaviour
             {
                 float dsToTarget = Vector3.Distance(transform.position, target.position);
 
-                if (!Physics.Raycast(transform.position, dirToTaget, dsToTarget, obstacleMask))
+                if (!Physics.Raycast(transform.position, dirToTaget, dsToTarget, obstacleMask) && !target.GetComponent<sAiController>().aiType.isHidden)
                 {
                     visibleTargets.Add(target);
                 }
