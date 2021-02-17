@@ -110,7 +110,6 @@ public class sAiController : MonoBehaviour
     void Shoot(Vector3 target)
     {
         sBullet bullet = Instantiate(bulletPrefab).GetComponent<sBullet>();
-        bullet.damage = this.aiType.damageOutput;
         bullet.transform.position = shootPoint.position;
         bullet.transform.LookAt(target);
     }
@@ -174,27 +173,27 @@ public class sAiController : MonoBehaviour
 
     private void OnDrawGizmosSelected()
     {
-        //if (turnOn)
-        //{
-        //    //Debug.Log(" Selected ");
-        //    //SFieldOfView fow = (SFieldOfView)target;
-        //    Handles.color = Color.white;
-        //    Handles.DrawWireArc(transform.position, Vector3.up, Vector3.forward, 360, viewRadius);
-        //    Vector3 viewAngleA = DirFromAnagle(-viewAngle / 2, false);
-        //    Vector3 viewAngleB = DirFromAnagle(viewAngle / 2, false);
+        if (turnOn)
+        {
+            //Debug.Log(" Selected ");
+            //SFieldOfView fow = (SFieldOfView)target;
+            Handles.color = Color.white;
+            Handles.DrawWireArc(transform.position, Vector3.up, Vector3.forward, 360, viewRadius);
+            Vector3 viewAngleA = DirFromAnagle(-viewAngle / 2, false);
+            Vector3 viewAngleB = DirFromAnagle(viewAngle / 2, false);
 
-        //    Handles.DrawLine(transform.position, transform.position + viewAngleA * viewRadius);
-        //    Handles.DrawLine(transform.position, transform.position + viewAngleB * viewRadius);
+            Handles.DrawLine(transform.position, transform.position + viewAngleA * viewRadius);
+            Handles.DrawLine(transform.position, transform.position + viewAngleB * viewRadius);
 
-        //    Handles.color = Color.red;
+            Handles.color = Color.red;
 
-        //    if (visibleTargets.Count > 0)
-        //    {
-        //        foreach (Transform visibleTarget in visibleTargets)
-        //        {
-        //            Handles.DrawLine(transform.position, visibleTarget.position);
-        //        }
-        //    }
-        //}
+            if (visibleTargets.Count > 0)
+            {
+                foreach (Transform visibleTarget in visibleTargets)
+                {
+                    Handles.DrawLine(transform.position, visibleTarget.position);
+                }
+            }
+        }
     }
 }
