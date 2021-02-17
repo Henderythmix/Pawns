@@ -1263,7 +1263,7 @@ GameObject:
   - component: {fileID: 494266260}
   - component: {fileID: 494266259}
   m_Layer: 8
-  m_Name: Fake Player
+  m_Name: Player Character
   m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1362,7 +1362,9 @@ MonoBehaviour:
     damageOutput: 25
     canSeeHiddenEnemies: 0
     movementSpeed: 5
+    isHidden: 0
     currentState: 0
+    attackRate: 0.25
     enemy: Enemy
   destination: {fileID: 494266254}
   shootPoint: {fileID: 766706129}
@@ -1370,7 +1372,6 @@ MonoBehaviour:
   controlled: 0
   stayPut: 1
   stopMovingAt: 3
-  firingRate: 0.25
   bulletPrefab: {fileID: 8464240472271784428, guid: ac6acf7cc614117478712db6fc9677b9,
     type: 3}
   viewRadius: 15
@@ -1398,7 +1399,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   leavePlayerCharacter: 304
   characterSpeed: 10
-  attackCooldownTime: 0.1
 --- !u!54 &494266260
 Rigidbody:
   m_ObjectHideFlags: 0
