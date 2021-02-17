@@ -1051,6 +1051,7 @@ MonoBehaviour:
   controlled: 0
   stayPut: 0
   stopMovingAt: 3
+  firingRate: 0.25
   bulletPrefab: {fileID: 0}
   viewRadius: 15
   viewAngle: 25
