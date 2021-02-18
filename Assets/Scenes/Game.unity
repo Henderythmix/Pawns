@@ -26,7 +26,7 @@ RenderSettings:
   m_AmbientIntensity: 1
   m_AmbientMode: 0
   m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
-  m_SkyboxMaterial: {fileID: 10304, guid: 0000000000000000f000000000000000, type: 0}
+  m_SkyboxMaterial: {fileID: 2100000, guid: 49c28eb6aa7f6a44486001f8a5db21e1, type: 2}
   m_HaloStrength: 0.5
   m_FlareStrength: 1
   m_FlareFadeSpeed: 3
@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.18028378, g: 0.22571412, b: 0.30692285, a: 1}
+  m_IndirectSpecularColor: {r: 0.14235835, g: 0.087167695, b: 0.03505327, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -1044,14 +1044,16 @@ MonoBehaviour:
     damageOutput: 25
     canSeeHiddenEnemies: 0
     movementSpeed: 5
+    isHidden: 0
     currentState: 0
+    attackRate: 0.25
+    enemy: 
   destination: {fileID: 1008853280}
   shootPoint: {fileID: 126838200}
   rotationSpeed: 1.5
   controlled: 0
   stayPut: 0
   stopMovingAt: 3
-  firingRate: 0.25
   bulletPrefab: {fileID: 0}
   viewRadius: 15
   viewAngle: 25
@@ -1063,6 +1065,7 @@ MonoBehaviour:
     m_Bits: 0
   visibleTargets: []
   turnOn: 1
+  orgRotation: {x: 0, y: 0, z: 0, w: 0}
 --- !u!136 &793547923
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -1227,7 +1230,6 @@ GameObject:
   m_Component:
   - component: {fileID: 955339112}
   - component: {fileID: 955339111}
-  - component: {fileID: 955339113}
   m_Layer: 0
   m_Name: Directional Light
   m_TagString: Untagged
@@ -1246,8 +1248,8 @@ Light:
   serializedVersion: 10
   m_Type: 1
   m_Shape: 0
-  m_Color: {r: 0.8490566, g: 0.770483, b: 0.6928622, a: 1}
-  m_Intensity: 1.3
+  m_Color: {r: 1, g: 0.90780425, b: 0.7688679, a: 1}
+  m_Intensity: 0.54
   m_Range: 10
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
@@ -1310,18 +1312,6 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 50, y: -30, z: 0}
---- !u!114 &955339113
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 955339110}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7a68c43fe1f2a47cfa234b5eeaa98012, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &985633617
 GameObject:
   m_ObjectHideFlags: 1

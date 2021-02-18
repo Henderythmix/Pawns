@@ -11,6 +11,12 @@ public class sPlayerController : MonoBehaviour
     sAiController playerCharacterScript;
     bool attackOnCooldown = false;
 
+    [Header("Other Components")]
+    [Tooltip("I setup the prefab so that the rotation happens to the model gameobject and not the main gameobject itself")]
+    public Transform PlayerModel;
+    [Tooltip("Animations! Can't forget those!")]
+    public Animator PlayerAnimator;
+
     private void Awake()
     {
         playerCharacterScript = gameObject.GetComponent<sAiController>();
@@ -66,6 +72,9 @@ public class sPlayerController : MonoBehaviour
             if (vertical != 0 && horizontal != 0)
             {
                 actualSpeed *= 0.5f;
+                PlayerAnimator.SetBool("Moving", true);
+            } else {
+                PlayerAnimator.SetBool("Moving", false);
             }
 
             Debug.Log(actualSpeed);
@@ -84,7 +93,7 @@ public class sPlayerController : MonoBehaviour
         {
             Vector3 pointToLook = cameraRay.GetPoint(rayLength);
 
-            transform.LookAt(new Vector3(pointToLook.x, transform.position.y, pointToLook.z));
+            PlayerModel.LookAt(new Vector3(pointToLook.x, transform.position.y, pointToLook.z));
         }
     }
 }
