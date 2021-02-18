@@ -19,7 +19,7 @@ public class OtherControls : MonoBehaviour
     {
         GetSoldiers();
         CinemachineCamera.Follow = Soldiers[SelectedSoldier].GetComponent<Transform>();
-        //Soldiers[SelectedSoldier].GetComponent<sPlayerController>().BeingControlled = true;
+        Soldiers[SelectedSoldier].GetComponent<sPlayerController_Other>().BeingControlled = true;
     }
 
     // Update is called once per frame
@@ -34,9 +34,9 @@ public class OtherControls : MonoBehaviour
             }
 
             CinemachineCamera.Follow = Soldiers[SelectedSoldier].GetComponent<Transform>();
-            //Soldiers[SelectedSoldier].GetComponent<sPlayerController>().BeingControlled = true;
+            Soldiers[SelectedSoldier].GetComponent<sPlayerController_Other>().BeingControlled = true;
         } else if (Input.GetKeyDown(PreviousSoldier)) {
-            //Soldiers[SelectedSoldier].GetComponent<sPlayerController>().BeingControlled = false;
+            Soldiers[SelectedSoldier].GetComponent<sPlayerController_Other>().BeingControlled = false;
 
             SelectedSoldier -= 1;
             if (SelectedSoldier < 0) {
@@ -44,7 +44,7 @@ public class OtherControls : MonoBehaviour
             }
 
             CinemachineCamera.Follow = Soldiers[SelectedSoldier].GetComponent<Transform>();
-            //Soldiers[SelectedSoldier].GetComponent<sPlayerController>().BeingControlled = true;
+            Soldiers[SelectedSoldier].GetComponent<sPlayerController_Other>().BeingControlled = true;
         }
     }
 

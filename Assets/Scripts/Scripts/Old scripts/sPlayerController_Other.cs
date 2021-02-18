@@ -4,11 +4,6 @@ using UnityEngine;
 
 public class sPlayerController_Other : MonoBehaviour
 {
-    [Header("Controls")]
-    public KeyCode North;
-    public KeyCode South;
-    public KeyCode West;
-    public KeyCode East;
 
     [Header("Status")]
     public float MovementSpeed;
@@ -40,24 +35,8 @@ public class sPlayerController_Other : MonoBehaviour
     void Update() {
         if (BeingControlled) {
             // Movement
-            int XVelocity = 0;
-            int YVelocity = 0;
-
-            if (Input.GetKey(North)) {
-                YVelocity = 1;
-            } else if (Input.GetKey(South)) {
-                YVelocity = -1;                
-            } else {
-                YVelocity = 0;
-            }
-            
-            if (Input.GetKey(West)) {
-                XVelocity = -1;
-            } else if (Input.GetKey(East)) {
-                XVelocity = 1;
-            } else {
-                XVelocity = 0;
-            }
+            float YVelocity = Input.GetAxis("Vertical");
+            float XVelocity = Input.GetAxis("Horizontal");
 
             PlayerPosition.position += new Vector3(XVelocity * MovementSpeed * Time.deltaTime, 0, YVelocity * MovementSpeed * Time.deltaTime);
 
