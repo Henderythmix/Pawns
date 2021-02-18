@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
-using UnityEngine.Assertions.Must;
 using UnityEngine.AI;
 
 public class sAiController : MonoBehaviour
@@ -11,12 +10,20 @@ public class sAiController : MonoBehaviour
     public Transform destination;
     public Transform shootPoint;
     public float rotationSpeed = 1.5f;
-    public bool controlled;
-    public bool stayPut;
+    [HideInInspector]public bool controlled = false;
+    // For player characters
+    public bool stayPut = false;
+    public bool cache = false;
+
+    public aiState currentState;
+    public float health;
+    [HideInInspector]public float maxHealth = 0;
 
     [Tooltip("At what distance should the AI stop moving if moving")]
     public float stopMovingAt = 3;
+    [Tooltip("Put the projectile used for this ai in here, otherwise leave it for the ai to use melee")]
     public GameObject bulletPrefab;
+    [Header("Detection Variables")]
     public float viewRadius;
     [Range(0, 360)]
     public float viewAngle;
@@ -26,30 +33,49 @@ public class sAiController : MonoBehaviour
 
     public List<Transform> visibleTargets = new List<Transform>();
 
-    [Header("TURN OFF WHEN ENTERING PLAY")]
-    // Unity be randomly crashing due to the gizmo drawing, but need it for visualization. 
-    // So for now we'll just use this.
-    public bool turnOn = true;
+    //[Header("TURN OFF WHEN ENTERING PLAY")]
+    //// Unity be randomly crashing due to the gizmo drawing, but need it for visualization. 
+    //// So for now we'll just use this.
+    //public bool turnOn = true;
 
-    Vector3 originalDestination;
-    NavMeshAgent aiAgent;
-    [HideInInspector] public Quaternion orgRotation;
+    bool attackCooldown = false;
+    bool canSeeHiddenEnemies = false;
+    //bool movedIntoLevelArea = false;
+    Transform originalDestination;
+    public NavMeshAgent aiAgent;
+    [HideInInspector]public Quaternion orgRotation;
+    private void Awake()
+    {
+        if (viewRadius > 0)
+        {
+            StartCoroutine(FindTargetWithDelay(.2f));
+            aiAgent = gameObject.GetComponent<NavMeshAgent>();
+        }
+
+        //if (destination == null)
+        //{
+        //    stayPut = true;
+        //}
+    }
+
     private void Start()
     {
-        StartCoroutine(FindTargetWithDelay(.2f));
-        aiAgent = gameObject.GetComponent<NavMeshAgent>();
+        LevelManager.instance.currentCache.Add(this);
     }
 
     private void Update()
     {
-        if (this.aiType.currentState.Equals(aiState.COMBAT))
+        if (!stayPut)
         {
-            //if (visibleTargets.Count == 0)
-            //{
-            //    Debug.Log("Found no more targets, going back to finding");
-            //    this.aiType.currentState = aiState.FINDING;
-            //    return;
-            //}
+            if (destination != null) aiAgent.SetDestination(destination.position);
+            else if (LevelManager.instance.playerCharactersAlive.Count > 0)
+                destination = sEnemySpawner.instance.FindClosestTarget(transform.position); 
+        }
+
+        if (currentState.Equals(aiState.COMBAT))
+        {
+            if (destination == null)
+                return;
 
             Transform closestEnemy = visibleTargets[0];
             if (visibleTargets.Count > 1)            // Find the closest enemy if there's more then one
@@ -64,7 +90,6 @@ public class sAiController : MonoBehaviour
                     }
                 }
             }
-
             Quaternion lookRotation = Quaternion.LookRotation(destination.position);
             lookRotation.y = 0;
             transform.rotation = Quaternion.RotateTowards(transform.rotation, lookRotation, rotationSpeed * Time.deltaTime);
@@ -74,46 +99,29 @@ public class sAiController : MonoBehaviour
                 {
                     if (aiAgent.isStopped)
                         aiAgent.isStopped = false;
-                    aiAgent.destination = destination.position;
+                    Debug.Log("Moving the ai");
                 }
                 else
                 {
+                    Debug.Log("Stopping the ai");
                     aiAgent.isStopped = true;
                 }
                 //Debug.Log(aiAgent.remainingDistance);
 
-                if (destination != closestEnemy)
-                {
-                    destination = closestEnemy;
-                }
-            }
-            else
-            {
-                transform.LookAt(closestEnemy);
+                if (destination != closestEnemy) destination = closestEnemy;
             }
 
-            //if (bulletPrefab)
-            //{
-            //    Debug.Log("Firing on the enemy");
-            //    //Shoot(new Vector3(destination.position.x, destination.position.y + 2, destination.position.z));
-            //}
-            //else
-            //{
-            //    Debug.LogError("Enemy does not have the projectile set on the sAiController script");
-            //}
-        }
-        else if (this.aiType.currentState.Equals(aiState.FINDING))
-        {
-            if (!stayPut)
+
+            if (!attackCooldown)
             {
-                if (destination != null)
-                    aiAgent.destination = destination.position;
-                else
-                {
-                    // Ask for a new destination from spawner
-                }
+                if (bulletPrefab) Shoot();
+                else Melee();
+                StartCoroutine("AttackCooldown");
             }
-            else
+        }
+        else if (currentState.Equals(aiState.FINDING))
+        {
+            if (stayPut)
             {
                 if (transform.rotation != orgRotation)
                 {
@@ -123,35 +131,76 @@ public class sAiController : MonoBehaviour
         }
     }
 
+    public void InitAI(AI _aiType, bool _playerCharacter)
+    {
+        health = _aiType.health;
+        maxHealth = _aiType.health;
+        aiType = _aiType;
+        stayPut = _playerCharacter;
+        canSeeHiddenEnemies = _aiType.canSeeHiddenEnemies;
+    }
+
     public void TakeDamage(float damage)
     {
-        this.aiType.health -= damage;
+        health -= damage;
         Debug.Log(gameObject.name + " is taking damage");
-        if (this.aiType.health <= 0)
+        if (health <= 0)
         {
+            if (!cache)
+            {
+                if (stayPut)
+                {
+                    LevelManager.instance.playerCharactersAlive.Remove(gameObject.GetComponent<sPlayerController>());
+                    if (LevelManager.instance.playerCharactersAlive.Count == 0) LevelManager.instance.LoseGame();
+                }
+                else
+                {
+                    LevelManager.instance.playersMoney += aiType.rewardForEliminating;
+                    cHudManager.instance.moneyText.text = LevelManager.instance.playersMoney.ToString();
+                }
+            }
+            else
+            {
+                LevelManager.instance.currentCache.Remove(this);
+                if (LevelManager.instance.currentCache.Count == 0) LevelManager.instance.LoseGame();
+            }
+
             Destroy(gameObject);
         }
     }
 
-    IEnumerator ShootWhenReady()
-    {
-        while (this.aiType.currentState.Equals(aiState.COMBAT) && bulletPrefab)
-        {
-            yield return new WaitForSeconds(this.aiType.attackRate);
-            Shoot();
-        }
+    //IEnumerator AttackWhenReady()
+    //{
+    //    while (currentState.Equals(aiState.COMBAT))
+    //    {
+    //        yield return new WaitForSeconds(aiType.attackRate);
+    //        if (bulletPrefab)
+    //            Shoot();
+    //        else if (aiAgent.isStopped)
+    //            Melee();
+    //    }
 
-        if (!bulletPrefab)
-        {
-            Debug.LogError("This enemy does not have a projectile on the sAiController Bullet Prefab variable");
-        }
+
+    //}
+
+    IEnumerator AttackCooldown()
+    {
+        attackCooldown = true;
+        yield return new WaitForSeconds(aiType.attackRate);
+        attackCooldown = false;
+    }
+
+    public void Melee()
+    {
+        destination.GetComponent<sAiController>().TakeDamage(aiType.damageOutput);
     }
 
     public void Shoot()
     {
         sBullet bullet = Instantiate(bulletPrefab).GetComponent<sBullet>();
-        bullet.damage = this.aiType.damageOutput;
-        bullet.enemy = this.aiType.enemy;
+        bullet.damage = aiType.damageOutput;
+        bullet.enemy = aiType.enemy;
+        if (aiType.enemy == "None") Debug.LogError("There isn't any tag setup on the aiType.enemy.");
         bullet.transform.rotation = shootPoint.rotation;
         //bullet.GetComponent<Rigidbody>().AddForce(transform.forward * bullet.speed);
         bullet.transform.position = shootPoint.position;
@@ -173,13 +222,15 @@ public class sAiController : MonoBehaviour
             {
                 //Debug.Log("Found a enemy, entering combat");
                 CollectOrginals();
-                this.aiType.currentState = aiState.COMBAT;
-                StartCoroutine("ShootWhenReady");
+                currentState = aiState.COMBAT;
+                //StartCoroutine("AttackWhenReady");
             }
-            else if (this.aiType.currentState.Equals(aiState.COMBAT))
+            // No longer in combat, go back to finding.
+            else if (currentState.Equals(aiState.COMBAT))
             {
+                ReturnToOriginals();
                 //Debug.Log("No more targets, going back to finding");
-                this.aiType.currentState = aiState.FINDING;
+                currentState = aiState.FINDING;
             }
         }
     }
@@ -192,7 +243,7 @@ public class sAiController : MonoBehaviour
         }
         else
         {
-            aiAgent.destination = originalDestination;
+            aiAgent.SetDestination(originalDestination.position);
         }
     }
 
@@ -202,7 +253,7 @@ public class sAiController : MonoBehaviour
         if (stayPut)
             orgRotation = transform.rotation;
         else
-            originalDestination = aiAgent.destination;
+            originalDestination = destination;
     }
 
     void FindVisibleTargets()
@@ -218,7 +269,7 @@ public class sAiController : MonoBehaviour
             {
                 float dsToTarget = Vector3.Distance(transform.position, target.position);
 
-                if (!Physics.Raycast(transform.position, dirToTaget, dsToTarget, obstacleMask) && !target.GetComponent<sAiController>().aiType.isHidden)
+                if (!Physics.Raycast(transform.position, dirToTaget, dsToTarget, obstacleMask) && (!target.GetComponent<sAiController>().aiType.isHidden || canSeeHiddenEnemies))
                 {
                     visibleTargets.Add(target);
                 }
@@ -237,27 +288,27 @@ public class sAiController : MonoBehaviour
 
     private void OnDrawGizmosSelected()
     {
-        if (turnOn)
+        //if (turnOn)
+        //{
+        //Debug.Log(" Selected ");
+        //SFieldOfView fow = (SFieldOfView)target;
+        Handles.color = Color.white;
+        Handles.DrawWireArc(transform.position, Vector3.up, Vector3.forward, 360, viewRadius);
+        Vector3 viewAngleA = DirFromAnagle(-viewAngle / 2, false);
+        Vector3 viewAngleB = DirFromAnagle(viewAngle / 2, false);
+
+        Handles.DrawLine(transform.position, transform.position + viewAngleA * viewRadius);
+        Handles.DrawLine(transform.position, transform.position + viewAngleB * viewRadius);
+
+        Handles.color = Color.red;
+
+        if (visibleTargets.Count > 0)
         {
-            //Debug.Log(" Selected ");
-            //SFieldOfView fow = (SFieldOfView)target;
-            Handles.color = Color.white;
-            Handles.DrawWireArc(transform.position, Vector3.up, Vector3.forward, 360, viewRadius);
-            Vector3 viewAngleA = DirFromAnagle(-viewAngle / 2, false);
-            Vector3 viewAngleB = DirFromAnagle(viewAngle / 2, false);
-
-            Handles.DrawLine(transform.position, transform.position + viewAngleA * viewRadius);
-            Handles.DrawLine(transform.position, transform.position + viewAngleB * viewRadius);
-
-            Handles.color = Color.red;
-
-            if (visibleTargets.Count > 0)
+            foreach (Transform visibleTarget in visibleTargets)
             {
-                foreach (Transform visibleTarget in visibleTargets)
-                {
-                    Handles.DrawLine(transform.position, visibleTarget.position);
-                }
+                Handles.DrawLine(transform.position, visibleTarget.position);
             }
         }
+        //}
     }
 }

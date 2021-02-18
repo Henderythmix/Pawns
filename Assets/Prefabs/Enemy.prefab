@@ -109,20 +109,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: aa29c1b1634b96b478309ee44cd4dcc6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  aiType:
-    health: 100
-    damageOutput: 25
-    canSeeHiddenEnemies: 0
-    movementSpeed: 5
-    currentState: 0
-    enemy: Player
+  aiType: {fileID: 0}
   destination: {fileID: 0}
   shootPoint: {fileID: 8070881507139611794}
-  rotationSpeed: 1.5
+  rotationSpeed: 3
   controlled: 0
   stayPut: 0
+  currentState: 0
+  health: 0
+  maxHealth: 0
   stopMovingAt: 3
-  firingRate: 0.75
   bulletPrefab: {fileID: 8464240472271784428, guid: ac6acf7cc614117478712db6fc9677b9,
     type: 3}
   viewRadius: 15
@@ -134,7 +130,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 512
   visibleTargets: []
-  turnOn: 1
+  aiAgent: {fileID: 0}
   orgRotation: {x: 0, y: 0, z: 0, w: 0}
 --- !u!195 &8070881506472533437
 NavMeshAgent:

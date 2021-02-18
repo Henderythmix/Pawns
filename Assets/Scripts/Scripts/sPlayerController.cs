@@ -1,60 +1,137 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class sPlayerController : MonoBehaviour
 {
     public KeyCode leavePlayerCharacter;
+    public KeyCode shortcutToThisCharacter;
+    public KeyCode spawnPlayerCharacter;
     public float characterSpeed = 5.0f;
+    [Tooltip("Temporary variable to see which controls feel better.")]
+    public bool switchControls = false;
+    public float damageOutput = 0;
+
+    bool initalized = false;
+
+    List<sAiController> friendliesNearby = new List<sAiController>();
     
     float attackCooldownTime;
-    sAiController playerCharacterScript;
+    [HideInInspector] public sAiController playerAIScript;
     bool attackOnCooldown = false;
 
+    
     [Header("Other Components")]
     [Tooltip("I setup the prefab so that the rotation happens to the model gameobject and not the main gameobject itself")]
     public Transform PlayerModel;
     [Tooltip("Animations! Can't forget those!")]
-    public Animator PlayerAnimator;
+    public Animator playerAnimator;
 
     private void Awake()
     {
-        playerCharacterScript = gameObject.GetComponent<sAiController>();
+        // LevelManager.instance doesn't exist, then we're doing this in start
+        if (LevelManager.instance) InitPlayer();
+
     }
+
+    private void Start()
+    {
+        // Just so we don't initalize twice 
+        if (!initalized) InitPlayer();
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.gameObject.GetComponent<sPlayerController>())
+        {
+            friendliesNearby.Add(other.gameObject.GetComponent<sAiController>());
+        }
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        if (other.gameObject.GetComponent<sPlayerController>())
+        {
+            friendliesNearby.Remove(other.gameObject.GetComponent<sAiController>());
+        }
+    }
+
+
 
     private void OnMouseDown()
     {
-        playerCharacterScript.controlled = true;
-        sCamera.instance.playerCharacterSelected = transform;
-        attackCooldownTime = playerCharacterScript.aiType.attackRate;
-        // Stops the player character from randomly shooting after just trying to click on the character.
-        StartCoroutine("PlayerAttackCooldown", 0.05f);
+        ControlThisCharacter();
     }
+
 
     private void Update()
     {
-        if (playerCharacterScript.controlled)
+        if (playerAIScript.controlled)
         {
             Rotation();
             Move();
             
-            if (Input.GetKey(leavePlayerCharacter))
+            if (Input.GetKey(leavePlayerCharacter) || sCamera.instance.playerCharacterSelected != transform)
             {
-                sCamera.instance.playerCharacterSelected = null;
-                playerCharacterScript.controlled = false;
+                if (sCamera.instance.playerCharacterSelected == transform)
+                    sCamera.instance.playerCharacterSelected = null;
+                playerAIScript.controlled = false;
             }
 
             if (Input.GetMouseButton(0) && !attackOnCooldown)
             {
-                playerCharacterScript.Shoot();
+                playerAIScript.Shoot();
                 StartCoroutine("PlayerAttackCooldown", attackCooldownTime);
+            }
+
+            if (friendliesNearby.Count > 0)
+            {
+                if (friendliesNearby.Count > 1)
+                {
+                    for (int i = 0; i < friendliesNearby.Count; i++)
+                    {
+                        MergePlayerCharacters(friendliesNearby[i]);
+                        Destroy(friendliesNearby[i].gameObject);
+                    }
+                }
+                else
+                {
+                    MergePlayerCharacters(friendliesNearby[0]);
+                    Destroy(friendliesNearby[0].gameObject);
+                }
             }
         }
 
 
     }
+    public void InitPlayer()
+    {
+        playerAIScript = gameObject.GetComponent<sAiController>();
+        playerAIScript.InitAI(LevelManager.instance.playerCharactersGlobal[0].playerCharacterType, true);
+        attackCooldownTime = playerAIScript.aiType.attackRate;
+        initalized = true;
+        //LevelManager.instance.playerCharactersAlive.Add(this);
+        damageOutput = playerAIScript.aiType.damageOutput;
+    }
 
-    IEnumerator PlayerAttackCooldown(float time)
+    public void MergePlayerCharacters(sAiController objectMerging)
+    {
+        damageOutput += objectMerging.aiType.damageOutput;
+        playerAIScript.health += objectMerging.health;
+        playerAIScript.maxHealth += objectMerging.maxHealth;
+    }
+
+    public void ControlThisCharacter()
+    {
+        playerAIScript.controlled = true;
+        sCamera.instance.playerCharacterSelected = transform;
+        // Stops the player character from randomly shooting after just trying to click on the character.
+        StartCoroutine("PlayerAttackCooldown", 0.05f);
+    }
+
+
+    public IEnumerator PlayerAttackCooldown(float time)
     {
         attackOnCooldown = true;
         yield return new WaitForSeconds(time);
@@ -69,18 +146,35 @@ public class sPlayerController : MonoBehaviour
         if (vertical != 0 || horizontal != 0)
         {
             float actualSpeed = characterSpeed;
-            if (vertical != 0 && horizontal != 0)
-            {
-                actualSpeed *= 0.5f;
-                PlayerAnimator.SetBool("Moving", true);
-            } else {
-                PlayerAnimator.SetBool("Moving", false);
-            }
+
 
             Debug.Log(actualSpeed);
-            transform.position += (transform.forward * vertical) * actualSpeed * Time.deltaTime;
-            transform.position += (transform.right * horizontal) * actualSpeed * Time.deltaTime;
+            if (switchControls)
+            {
+                // If we're using both the forward/backward and left/right keys to keep a consistent speed
+                if (vertical != 0 && horizontal != 0)
+                {
+                    actualSpeed *= 0.5f;
+                }
+                if (playerAnimator)
+                    playerAnimator.SetBool("Moving", true);
+                transform.position += (transform.forward * vertical) * actualSpeed * Time.deltaTime;
+                transform.position += (transform.right * horizontal) * actualSpeed * Time.deltaTime;
+            }
+            else
+            {
+                if (vertical != 0 && horizontal != 0)
+                {
+                    actualSpeed *= 0.75f;
+                }
+                Debug.Log(transform.position.x + " before transitioning");
+                Debug.Log(horizontal);
+                transform.position = new Vector3(transform.position.x + (horizontal* actualSpeed * Time.deltaTime), transform.position.y, transform.position.z + (vertical * actualSpeed * Time.deltaTime));
+                Debug.Log(transform.position.x + " after transitioning");
+            }
         }
+        else if (playerAnimator)
+            playerAnimator.SetBool("Moving", true);
     }
 
     void Rotation()
@@ -93,7 +187,10 @@ public class sPlayerController : MonoBehaviour
         {
             Vector3 pointToLook = cameraRay.GetPoint(rayLength);
 
-            PlayerModel.LookAt(new Vector3(pointToLook.x, transform.position.y, pointToLook.z));
+            if (PlayerModel)
+                PlayerModel.LookAt(new Vector3(pointToLook.x, transform.position.y, pointToLook.z));
+            else
+                transform.LookAt(new Vector3(pointToLook.x, transform.position.y, pointToLook.z));
         }
     }
 }

@@ -7,12 +7,18 @@ public class sBullet : MonoBehaviour
     public float speed = 25;
     public string enemy;
     public float damage;
-    public float life;
-
-    void Start() {
-        StartCoroutine("TookTooLong");
+    private void Awake()
+    {
+        StartCoroutine("RemoveAfterTime");
     }
-    
+
+    // In the particular event where the bullet bugged out and did not hit a wall, clear it out anyways
+    IEnumerator RemoveAfterTime()
+    {
+        yield return new WaitForSeconds(3f);
+        Destroy(gameObject);
+    }
+
     void Update()
     {
         transform.position += transform.forward * speed * Time.deltaTime;
@@ -25,11 +31,6 @@ public class sBullet : MonoBehaviour
             //Debug.Log("Sending take damage");
             collision.gameObject.GetComponent<sAiController>().TakeDamage(damage);
         }
-        Destroy(gameObject);
-    }
-
-    IEnumerator TookTooLong() {
-        yield return new WaitForSeconds(life);
         Destroy(gameObject);
     }
 }
