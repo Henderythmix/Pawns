@@ -111,6 +111,7 @@ MonoBehaviour:
   speed: 25
   enemy: 
   damage: 25
+  life: 5
 --- !u!96 &-118542287942998533
 TrailRenderer:
   serializedVersion: 2
