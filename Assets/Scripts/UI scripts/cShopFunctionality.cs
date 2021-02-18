@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 using UnityEngine;
 
 public class cShopFunctionality : MonoBehaviour
@@ -15,7 +16,8 @@ public class cShopFunctionality : MonoBehaviour
     {
         if (purchased(cost))
         {
-            lmi.playerCharactersAlive[playerChar].playerAIScript.health = lmi.playerCharactersAlive[playerChar].playerAIScript.maxHealth;
+            //lmi.playerCharactersAlive[playerChar].playerAIScript.health = lmi.playerCharactersAlive[playerChar].playerAIScript.maxHealth;
+            lmi.playerCharactersAlive[playerChar].playerAIScript.SetHealth(lmi.playerCharactersAlive[playerChar].playerAIScript.maxHealth, true);
         }
     }
 
@@ -23,7 +25,7 @@ public class cShopFunctionality : MonoBehaviour
     {
         if (purchased(cost))
         {
-            lmi.playerCharactersAlive[playerchar].playerAIScript.maxHealth += amount;
+            lmi.playerCharactersAlive[playerchar].playerAIScript.SetNewMaxHealth(amount, true, false, true);
         }
     }
 

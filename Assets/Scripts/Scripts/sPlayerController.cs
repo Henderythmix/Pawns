@@ -13,12 +13,14 @@ public class sPlayerController : MonoBehaviour
     public bool switchControls = false;
     public float damageOutput = 0;
 
+
     bool initalized = false;
 
     List<sAiController> friendliesNearby = new List<sAiController>();
+    List<sAiController> friendliesCombined = new List<sAiController>();
     
     float attackCooldownTime;
-    [HideInInspector] public sAiController playerAIScript;
+    public sAiController playerAIScript;
     bool attackOnCooldown = false;
 
     
@@ -91,15 +93,18 @@ public class sPlayerController : MonoBehaviour
                 {
                     for (int i = 0; i < friendliesNearby.Count; i++)
                     {
-                        MergePlayerCharacters(friendliesNearby[i]);
+                        MergePlayerCharacters(friendliesNearby[i].aiType, friendliesNearby[i].health, friendliesNearby[i].maxHealth);
                         Destroy(friendliesNearby[i].gameObject);
+                        
                     }
                 }
                 else
                 {
-                    MergePlayerCharacters(friendliesNearby[0]);
+                    MergePlayerCharacters(friendliesNearby[0].aiType, friendliesNearby[0].health, friendliesNearby[0].maxHealth);
                     Destroy(friendliesNearby[0].gameObject);
                 }
+                playerAIScript.healthBar.parent = playerAIScript.healthBarHolder;
+                playerAIScript.ResetupHealthBar();
             }
         }
 
@@ -107,7 +112,8 @@ public class sPlayerController : MonoBehaviour
     }
     public void InitPlayer()
     {
-        playerAIScript = gameObject.GetComponent<sAiController>();
+        if (!playerAIScript)
+            playerAIScript = gameObject.GetComponent<sAiController>();
         playerAIScript.InitAI(LevelManager.instance.playerCharactersGlobal[0].playerCharacterType, true);
         attackCooldownTime = playerAIScript.aiType.attackRate;
         initalized = true;
@@ -115,11 +121,14 @@ public class sPlayerController : MonoBehaviour
         damageOutput = playerAIScript.aiType.damageOutput;
     }
 
-    public void MergePlayerCharacters(sAiController objectMerging)
+    public void MergePlayerCharacters(AI _type, float _health, float _maxHealth)
     {
-        damageOutput += objectMerging.aiType.damageOutput;
-        playerAIScript.health += objectMerging.health;
-        playerAIScript.maxHealth += objectMerging.maxHealth;
+        damageOutput += _type.damageOutput;
+        //playerAIScript.health += _health;
+        playerAIScript.SetHealth(_health, false);
+        playerAIScript.SetNewMaxHealth(_maxHealth, true, false, false);
+        //playerAIScript.maxHealth += _maxHealth;
+        LevelManager.instance.SetMerged(_type);
     }
 
     public void ControlThisCharacter()
@@ -167,10 +176,10 @@ public class sPlayerController : MonoBehaviour
                 {
                     actualSpeed *= 0.75f;
                 }
-                Debug.Log(transform.position.x + " before transitioning");
-                Debug.Log(horizontal);
+                //Debug.Log(transform.position.x + " before transitioning");
+                //Debug.Log(horizontal);
                 transform.position = new Vector3(transform.position.x + (horizontal* actualSpeed * Time.deltaTime), transform.position.y, transform.position.z + (vertical * actualSpeed * Time.deltaTime));
-                Debug.Log(transform.position.x + " after transitioning");
+                //Debug.Log(transform.position.x + " after transitioning");
             }
         }
         else if (playerAnimator)

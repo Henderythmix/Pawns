@@ -14,10 +14,15 @@ public class sAiController : MonoBehaviour
     // For player characters
     public bool stayPut = false;
     public bool cache = false;
+    public bool startingCharacter = false;
 
     public aiState currentState;
-    public float health;
-    [HideInInspector]public float maxHealth = 0;
+    public float health = 0;
+    public float maxHealth = 0;
+    [Tooltip("Put the actual health bar here, and put the empty GO in the health bar holder variable.")]
+    public Transform healthBar;
+    [Tooltip("Make sure to put the empty GO that is holding the health bar here, and the actual healthbar in Health Bar")]
+    public Transform healthBarHolder;
 
     [Tooltip("At what distance should the AI stop moving if moving")]
     public float stopMovingAt = 3;
@@ -60,7 +65,8 @@ public class sAiController : MonoBehaviour
 
     private void Start()
     {
-        LevelManager.instance.currentCache.Add(this);
+        if (cache)
+            LevelManager.instance.currentCache.Add(this);
     }
 
     private void Update()
@@ -99,11 +105,11 @@ public class sAiController : MonoBehaviour
                 {
                     if (aiAgent.isStopped)
                         aiAgent.isStopped = false;
-                    Debug.Log("Moving the ai");
+                    //Debug.Log("Moving the ai");
                 }
                 else
                 {
-                    Debug.Log("Stopping the ai");
+                    //Debug.Log("Stopping the ai");
                     aiAgent.isStopped = true;
                 }
                 //Debug.Log(aiAgent.remainingDistance);
@@ -133,16 +139,62 @@ public class sAiController : MonoBehaviour
 
     public void InitAI(AI _aiType, bool _playerCharacter)
     {
-        health = _aiType.health;
-        maxHealth = _aiType.health;
+        //health = _aiType.health;
+        //maxHealth = _aiType.health;
+        if (!startingCharacter)
+        {
+            SetHealth(_aiType.health, true);
+            SetNewMaxHealth(_aiType.health, false, true, true);
+        }
         aiType = _aiType;
         stayPut = _playerCharacter;
         canSeeHiddenEnemies = _aiType.canSeeHiddenEnemies;
     }
 
+    // Make sure this function is called first if paired with setting health
+    public void SetNewMaxHealth(float _newMaxHealth, bool _reAdjustHealth, bool set, bool reAttach)
+    {
+        if (!set)
+            maxHealth += _newMaxHealth;
+        else
+            maxHealth = _newMaxHealth;
+        // Ungroup and then regroup the health bar to accomdate new max health
+        if (healthBar.parent = healthBarHolder)
+            healthBar.parent = transform;
+
+        healthBarHolder.localScale = new Vector3(maxHealth, healthBarHolder.localScale.y, healthBarHolder.localScale.z);
+
+        if (reAttach)
+        {
+            healthBar.parent = healthBarHolder;
+            ResetupHealthBar();
+        }
+        //Debug.Log(healthBar.localScale.x + " After reattaching parent");
+        if (_reAdjustHealth)
+            healthBarHolder.localScale = new Vector3(maxHealth - (maxHealth - health), healthBarHolder.localScale.y, healthBarHolder.localScale.z);
+    }
+
+    public void ResetupHealthBar()
+    {
+        healthBar.localScale = new Vector3(0.005f, healthBar.localScale.y, healthBar.localScale.z);
+        healthBar.localPosition = new Vector3(0.0025f, healthBar.localPosition.y, healthBar.localPosition.z);
+    }
+
+    public void SetHealth(float _amount, bool set)
+    {
+        if (!set)
+            health += _amount;
+        else
+            health = _amount;
+        Debug.Log(health + " Health");
+        healthBarHolder.localScale = new Vector3(health, healthBarHolder.localScale.y, healthBarHolder.localScale.z);
+    }
+
     public void TakeDamage(float damage)
     {
-        health -= damage;
+        //health -= damage;
+        if (healthBarHolder) SetHealth(-damage, false);
+
         Debug.Log(gameObject.name + " is taking damage");
         if (health <= 0)
         {
@@ -163,6 +215,7 @@ public class sAiController : MonoBehaviour
             {
                 LevelManager.instance.currentCache.Remove(this);
                 if (LevelManager.instance.currentCache.Count == 0) LevelManager.instance.LoseGame();
+                else Debug.Log(LevelManager.instance.currentCache.Count);
             }
 
             Destroy(gameObject);
