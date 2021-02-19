@@ -12,7 +12,8 @@ public class LevelManager : MonoBehaviour
     public Player[] playerCharactersGlobal;
     // Keeps track of all the current players merged instead of using the class for dynamic data.
     public bool[] playerCharactersGlobalMerged;
-
+    public bool[] playerCharactersGlobalDead;
+    public GameObject playerTemplate;
     // Used for keeping track of alive player characters
     public List<sPlayerController> playerCharactersAlive;
     public List<sAiController> currentCache = new List<sAiController>();
@@ -28,8 +29,9 @@ public class LevelManager : MonoBehaviour
 
         if (playerCharactersGlobal.Length > 0)
         {
-            Debug.Log(playerCharactersGlobal.Length);
+            //Debug.Log(playerCharactersGlobal.Length);
             playerCharactersGlobalMerged = new bool[playerCharactersGlobal.Length];
+            playerCharactersGlobalDead = new bool[playerCharactersGlobal.Length];
         }
         else Debug.LogError("No player types are set up in playerCharactersGlobal on the LevelManager script.");
 
@@ -43,9 +45,30 @@ public class LevelManager : MonoBehaviour
         playerCharactersAlive[0].playerAIScript = playerCharactersAlive[0].gameObject.GetComponent<sAiController>();
         for (int i = 0; i < playerCharactersGlobal.Length; i++)
         {
-            if (playerCharactersGlobal[i].playerCharacterType != playerCharactersAlive[0].playerAIScript)
+            if (playerCharactersGlobal[i].playerCharacterType != playerCharactersAlive[0].playerAIScript.aiAgent)
             {
-                playerCharactersAlive[0].MergePlayerCharacters(playerCharactersGlobal[i].playerCharacterType, playerCharactersGlobal[i].playerCharacterType.health, playerCharactersGlobal[i].playerCharacterType.health);
+                sPlayerController playerTemplateScript = playerTemplate.GetComponent<sPlayerController>();
+
+                // Create the new instances
+                sPlayerController newPlayer;
+
+                // Setup the data of the new instances
+                newPlayer = playerTemplateScript;
+                newPlayer.playerAIScript = playerTemplate.GetComponent<sAiController>();
+
+                //newPlayer.InitPlayer();
+                newPlayer.playerAIScript.InitAI(playerCharactersGlobal[i].playerCharacterType, true);
+
+                //DEBUGS
+                Debug.Log(newPlayer.playerAIScript + "Player ai script");
+                Debug.Log(newPlayer.damageOutput + " damage output");
+                Debug.Log(newPlayer.playerAIScript.health+ " health");
+
+                // Send off the new data
+                playerCharactersAlive[0].MergePlayerCharacters(newPlayer);
+
+
+
             }
         }
         playerCharactersAlive[0].playerAIScript.healthBar.parent = playerCharactersAlive[0].playerAIScript.healthBarHolder;

@@ -10,13 +10,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 63b05275d3a5fc543b4d70f588f2fa73, type: 3}
-  m_Name: Playable Character 1
+  m_Name: Cache
   m_EditorClassIdentifier: 
-  health: 100
-  damageOutput: 25
+  health: 300
+  damageOutput: 0
   canSeeHiddenEnemies: 0
-  movementSpeed: 5
+  movementSpeed: 0
   isHidden: 0
   currentState: 0
-  attackRate: 0.25
+  attackRate: 0
+  rewardForEliminating: 0
   enemy: Enemy

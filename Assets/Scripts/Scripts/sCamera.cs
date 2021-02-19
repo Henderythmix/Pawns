@@ -86,9 +86,9 @@ public class sCamera : MonoBehaviour
             {
                 actualSpeed /= 1.5f;
             }
-            transform.position = new Vector3(Mathf.Clamp(transform.position.x + (cameraMoveSpeed * horizontal), xBoundaryMin, xBoundaryMax), 
+            transform.position = new Vector3(Mathf.Clamp(transform.position.x + (actualSpeed * horizontal), xBoundaryMin, xBoundaryMax), 
                                             transform.position.y, 
-                                            Mathf.Clamp(transform.position.z + (cameraMoveSpeed * vertical), zBoundaryMin, zBoundaryMax));
+                                            Mathf.Clamp(transform.position.z + (actualSpeed * vertical), zBoundaryMin, zBoundaryMax));
         }
     }
 }

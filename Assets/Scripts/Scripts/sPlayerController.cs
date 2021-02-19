@@ -6,18 +6,20 @@ using UnityEngine;
 public class sPlayerController : MonoBehaviour
 {
     public KeyCode leavePlayerCharacter;
-    public KeyCode shortcutToThisCharacter;
-    public KeyCode spawnPlayerCharacter;
+    //public KeyCode shortcutToThisCharacter;
+    public KeyCode spawnCharacterHere;
+    //public KeyCode spawnPlayerCharacter;
     public float characterSpeed = 5.0f;
     [Tooltip("Temporary variable to see which controls feel better.")]
     public bool switchControls = false;
     public float damageOutput = 0;
+    public GameObject playerPrefab;
 
-
+    // For the awake and start functions
     bool initalized = false;
 
-    List<sAiController> friendliesNearby = new List<sAiController>();
-    List<sAiController> friendliesCombined = new List<sAiController>();
+    List<sPlayerController> friendliesNearby = new List<sPlayerController>();
+    List<sPlayerController> friendliesCombined = new List<sPlayerController>();
     
     float attackCooldownTime;
     public sAiController playerAIScript;
@@ -47,7 +49,7 @@ public class sPlayerController : MonoBehaviour
     {
         if (other.gameObject.GetComponent<sPlayerController>())
         {
-            friendliesNearby.Add(other.gameObject.GetComponent<sAiController>());
+            friendliesNearby.Add(other.gameObject.GetComponent<sPlayerController>());
         }
     }
 
@@ -55,7 +57,7 @@ public class sPlayerController : MonoBehaviour
     {
         if (other.gameObject.GetComponent<sPlayerController>())
         {
-            friendliesNearby.Remove(other.gameObject.GetComponent<sAiController>());
+            friendliesNearby.Remove(other.gameObject.GetComponent<sPlayerController>());
         }
     }
 
@@ -93,42 +95,72 @@ public class sPlayerController : MonoBehaviour
                 {
                     for (int i = 0; i < friendliesNearby.Count; i++)
                     {
-                        MergePlayerCharacters(friendliesNearby[i].aiType, friendliesNearby[i].health, friendliesNearby[i].maxHealth);
+                        MergePlayerCharacters(friendliesNearby[i]);
                         Destroy(friendliesNearby[i].gameObject);
-                        
                     }
                 }
                 else
                 {
-                    MergePlayerCharacters(friendliesNearby[0].aiType, friendliesNearby[0].health, friendliesNearby[0].maxHealth);
+                    MergePlayerCharacters(friendliesNearby[0]);
                     Destroy(friendliesNearby[0].gameObject);
                 }
                 playerAIScript.healthBar.parent = playerAIScript.healthBarHolder;
                 playerAIScript.ResetupHealthBar();
             }
+
+            if (Input.GetKeyDown(spawnCharacterHere) && friendliesCombined.Count > 0)
+            {
+                Debug.Log("Placing down playable character");
+                SpawnCharacterHere();
+            }
         }
 
 
     }
+
+    public void SpawnCharacterHere()
+    {
+        // Spawn the character
+        sAiController tmp = Instantiate(playerPrefab).GetComponent<sAiController>();
+        tmp.health = friendliesCombined[0].playerAIScript.health;
+        tmp.maxHealth = friendliesCombined[0].playerAIScript.maxHealth;
+        tmp.GetComponent<sPlayerController>().damageOutput = friendliesCombined[0].damageOutput;
+        tmp.transform.position = transform.position;
+        tmp.transform.rotation = transform.rotation;
+
+        // Remove everything off this player controller that was from that character
+        playerAIScript.SetHealth(-friendliesCombined[0].playerAIScript.health, false);
+        playerAIScript.SetNewMaxHealth(-friendliesCombined[0].playerAIScript.maxHealth, true, false, true);
+        damageOutput -= friendliesCombined[0].damageOutput;
+
+        // Finished spawning the character
+        friendliesCombined.Remove(friendliesCombined[0]);
+    }
+
     public void InitPlayer()
     {
+        // Checking if this is on an instance or just being called
         if (!playerAIScript)
             playerAIScript = gameObject.GetComponent<sAiController>();
+
         playerAIScript.InitAI(LevelManager.instance.playerCharactersGlobal[0].playerCharacterType, true);
         attackCooldownTime = playerAIScript.aiType.attackRate;
         initalized = true;
+        playerAIScript.stayPut = true;
         //LevelManager.instance.playerCharactersAlive.Add(this);
         damageOutput = playerAIScript.aiType.damageOutput;
     }
 
-    public void MergePlayerCharacters(AI _type, float _health, float _maxHealth)
+    public void MergePlayerCharacters(sPlayerController thePlayerCharacter)
     {
-        damageOutput += _type.damageOutput;
+        damageOutput += thePlayerCharacter.damageOutput;
         //playerAIScript.health += _health;
-        playerAIScript.SetHealth(_health, false);
-        playerAIScript.SetNewMaxHealth(_maxHealth, true, false, false);
+
+        playerAIScript.SetHealth(thePlayerCharacter.playerAIScript.health, false);
+        playerAIScript.SetNewMaxHealth(thePlayerCharacter.playerAIScript.maxHealth, true, false, false);
         //playerAIScript.maxHealth += _maxHealth;
-        LevelManager.instance.SetMerged(_type);
+        LevelManager.instance.SetMerged(thePlayerCharacter.playerAIScript.aiType);
+        friendliesCombined.Add(thePlayerCharacter);
     }
 
     public void ControlThisCharacter()
@@ -157,7 +189,7 @@ public class sPlayerController : MonoBehaviour
             float actualSpeed = characterSpeed;
 
 
-            Debug.Log(actualSpeed);
+            //Debug.Log(actualSpeed);
             if (switchControls)
             {
                 // If we're using both the forward/backward and left/right keys to keep a consistent speed

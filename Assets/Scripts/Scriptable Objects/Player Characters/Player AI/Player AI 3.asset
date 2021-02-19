@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 63b05275d3a5fc543b4d70f588f2fa73, type: 3}
-  m_Name: Playable Character 3
+  m_Name: Player AI 3
   m_EditorClassIdentifier: 
   health: 100
   damageOutput: 25
@@ -19,4 +19,5 @@ MonoBehaviour:
   isHidden: 0
   currentState: 0
   attackRate: 0.25
+  rewardForEliminating: 0
   enemy: Enemy

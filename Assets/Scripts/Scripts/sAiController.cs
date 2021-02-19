@@ -16,9 +16,9 @@ public class sAiController : MonoBehaviour
     public bool cache = false;
     public bool startingCharacter = false;
 
-    public aiState currentState;
-    public float health = 0;
-    public float maxHealth = 0;
+    [HideInInspector]public aiState currentState;
+    [HideInInspector]public float health = 0;
+    [HideInInspector]public float maxHealth = 0;
     [Tooltip("Put the actual health bar here, and put the empty GO in the health bar holder variable.")]
     public Transform healthBar;
     [Tooltip("Make sure to put the empty GO that is holding the health bar here, and the actual healthbar in Health Bar")]
@@ -186,7 +186,7 @@ public class sAiController : MonoBehaviour
             health += _amount;
         else
             health = _amount;
-        Debug.Log(health + " Health");
+        //Debug.Log(health + " Health");
         healthBarHolder.localScale = new Vector3(health, healthBarHolder.localScale.y, healthBarHolder.localScale.z);
     }
 
