@@ -35,6 +35,7 @@ public class sAiController : MonoBehaviour
 
     public LayerMask targetMask;
     public LayerMask obstacleMask;
+    public Animator aiAnimator;
 
     public List<Transform> visibleTargets = new List<Transform>();
 
@@ -56,6 +57,8 @@ public class sAiController : MonoBehaviour
             StartCoroutine(FindTargetWithDelay(.2f));
             aiAgent = gameObject.GetComponent<NavMeshAgent>();
         }
+        if (!stayPut && !aiAnimator)
+            aiAnimator = gameObject.GetComponent<Animator>();
 
         //if (destination == null)
         //{
@@ -66,7 +69,14 @@ public class sAiController : MonoBehaviour
     private void Start()
     {
         if (cache)
+        {
             LevelManager.instance.currentCache.Add(this);
+            InitAI(aiType, false);
+            stayPut = true;
+        }
+        if (aiAnimator)
+            aiAnimator.SetBool("Moving", true);
+
     }
 
     private void Update()
@@ -104,13 +114,17 @@ public class sAiController : MonoBehaviour
                 if (aiAgent.remainingDistance > stopMovingAt)
                 {
                     if (aiAgent.isStopped)
+                    {
                         aiAgent.isStopped = false;
+                        aiAnimator.SetBool("Moving", true);
+                    }
                     //Debug.Log("Moving the ai");
                 }
                 else
                 {
                     //Debug.Log("Stopping the ai");
                     aiAgent.isStopped = true;
+                    aiAnimator.SetBool("Moving", false);
                 }
                 //Debug.Log(aiAgent.remainingDistance);
 

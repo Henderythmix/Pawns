@@ -57,12 +57,17 @@ public class LevelManager : MonoBehaviour
                 newPlayer.playerAIScript = playerTemplate.GetComponent<sAiController>();
 
                 //newPlayer.InitPlayer();
-                newPlayer.playerAIScript.InitAI(playerCharactersGlobal[i].playerCharacterType, true);
+                //newPlayer.playerAIScript.InitAI(playerCharactersGlobal[i].playerCharacterType, true);
+
+                newPlayer.damageOutput = playerCharactersGlobal[i].playerCharacterType.damageOutput;
+                newPlayer.playerAIScript.aiType = playerCharactersGlobal[i].playerCharacterType;
+                newPlayer.playerAIScript.health = playerCharactersGlobal[i].playerCharacterType.health;
+                newPlayer.playerAIScript.maxHealth = playerCharactersGlobal[i].playerCharacterType.health;
 
                 //DEBUGS
-                Debug.Log(newPlayer.playerAIScript + "Player ai script");
-                Debug.Log(newPlayer.damageOutput + " damage output");
-                Debug.Log(newPlayer.playerAIScript.health+ " health");
+                //Debug.Log(newPlayer.playerAIScript + "Player ai script");
+                //Debug.Log(newPlayer.damageOutput + " damage output");
+                //Debug.Log(newPlayer.playerAIScript.health+ " health");
 
                 // Send off the new data
                 playerCharactersAlive[0].MergePlayerCharacters(newPlayer);

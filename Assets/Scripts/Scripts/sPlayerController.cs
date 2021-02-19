@@ -31,6 +31,7 @@ public class sPlayerController : MonoBehaviour
     public Transform PlayerModel;
     [Tooltip("Animations! Can't forget those!")]
     public Animator playerAnimator;
+    public bool freezeInput = false;
 
     private void Awake()
     {
@@ -43,6 +44,7 @@ public class sPlayerController : MonoBehaviour
     {
         // Just so we don't initalize twice 
         if (!initalized) InitPlayer();
+        if (!playerAnimator) gameObject.GetComponent<Animator>();
     }
 
     private void OnTriggerEnter(Collider other)
@@ -71,7 +73,7 @@ public class sPlayerController : MonoBehaviour
 
     private void Update()
     {
-        if (playerAIScript.controlled)
+        if (playerAIScript.controlled && !freezeInput && Time.timeScale != 0)
         {
             Rotation();
             Move();
@@ -136,6 +138,25 @@ public class sPlayerController : MonoBehaviour
         // Finished spawning the character
         friendliesCombined.Remove(friendliesCombined[0]);
     }
+
+    //IEnumerator PlayCellSplittingAnimation()
+    //{
+
+    //}
+
+    //IEnumerator PlayMergeAnimation()
+    //{
+
+    //}
+
+    //IEnumerator PlayUnmergeAnimation()
+    //{
+    //    freezeInput = true;
+    //    while ()
+    //    {
+
+    //    }
+    //}
 
     public void InitPlayer()
     {
@@ -210,12 +231,15 @@ public class sPlayerController : MonoBehaviour
                 }
                 //Debug.Log(transform.position.x + " before transitioning");
                 //Debug.Log(horizontal);
+
+                if (playerAnimator)
+                    playerAnimator.SetBool("Moving", true);
                 transform.position = new Vector3(transform.position.x + (horizontal* actualSpeed * Time.deltaTime), transform.position.y, transform.position.z + (vertical * actualSpeed * Time.deltaTime));
                 //Debug.Log(transform.position.x + " after transitioning");
             }
         }
         else if (playerAnimator)
-            playerAnimator.SetBool("Moving", true);
+            playerAnimator.SetBool("Moving", false);
     }
 
     void Rotation()
