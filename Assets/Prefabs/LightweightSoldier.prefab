@@ -63,7 +63,6 @@ GameObject:
   - component: {fileID: 8260033410712741741}
   - component: {fileID: 158655156624285327}
   - component: {fileID: 229282912925293345}
-  - component: {fileID: 217195315108042277}
   m_Layer: 8
   m_Name: LightweightSoldier
   m_TagString: Player
@@ -143,25 +142,24 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2517805100044352020}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: aa29c1b1634b96b478309ee44cd4dcc6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  aiType:
-    health: 100
-    damageOutput: 25
-    canSeeHiddenEnemies: 0
-    movementSpeed: 5
-    isHidden: 0
-    currentState: 0
-    attackRate: 0.25
-    enemy: 
+  aiType: {fileID: 11400000, guid: 83ba11c6854b6be40bb1df8c816490cc, type: 2}
   destination: {fileID: 2517805100044352040}
   shootPoint: {fileID: 1145141652918227584}
   rotationSpeed: 1.5
   controlled: 0
   stayPut: 0
+  cache: 0
+  startingCharacter: 0
+  currentState: 0
+  health: 0
+  maxHealth: 0
+  healthBar: {fileID: 0}
+  healthBarHolder: {fileID: 0}
   stopMovingAt: 3
   bulletPrefab: {fileID: 8464240472271784428, guid: ac6acf7cc614117478712db6fc9677b9,
     type: 3}
@@ -174,7 +172,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 0
   visibleTargets: []
-  turnOn: 1
+  aiAgent: {fileID: 0}
   orgRotation: {x: 0, y: 0, z: 0, w: 0}
 --- !u!114 &229282912925293345
 MonoBehaviour:
@@ -183,48 +181,20 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2517805100044352020}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 71d8fb55486098c4f99aedc847625162, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   leavePlayerCharacter: 0
+  shortcutToThisCharacter: 0
+  spawnPlayerCharacter: 0
   characterSpeed: 5
+  switchControls: 0
+  damageOutput: 0
+  playerAIScript: {fileID: 158655156624285327}
   PlayerModel: {fileID: 2042520080360523652}
-  PlayerAnimator: {fileID: 8597702847369267975}
---- !u!114 &217195315108042277
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2517805100044352020}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d62ab0ce79cb7ea45984324a5e6a90e5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  MovementSpeed: 5.93
-  ShootSlowness: 1.69
-  playerStats:
-    health: 100
-    damageOutput: 25
-    canSeeHiddenEnemies: 0
-    movementSpeed: 5
-    isHidden: 0
-    currentState: 0
-    attackRate: 0.25
-    enemy: 
-  shootPoint: {fileID: 2038771705535103296}
-  playerCharState: 0
-  enemyFocusingOn: {fileID: 0}
-  playerUnit: 0
-  BeingControlled: 0
-  PlayerModel: {fileID: 2042520080360523652}
-  Direction: {fileID: 2038771705535103296}
-  LaserBolt: {fileID: 8464240472271784428, guid: ac6acf7cc614117478712db6fc9677b9,
-    type: 3}
-  PlayerAnimator: {fileID: 8597702847369267975}
+  playerAnimator: {fileID: 8597702847369267975}
 --- !u!1 &2517805100973432940
 GameObject:
   m_ObjectHideFlags: 0
