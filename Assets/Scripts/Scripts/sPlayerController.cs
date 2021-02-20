@@ -21,7 +21,6 @@ public class sPlayerController : MonoBehaviour
     bool initalized = false;
 
     float attackCooldownTime;
-    public sAiController playerAIScript;
     bool attackOnCooldown = false;
 
     
@@ -33,10 +32,14 @@ public class sPlayerController : MonoBehaviour
 
     [Header("Public for debugging only, dont touch")]
     [Space(20)]
+    public sAiController playerAIScript;
+    public PlayerData thisPlayerData;
     public List<sPlayerController> friendliesNearby = new List<sPlayerController>();
-    public List<sPlayerController> friendliesCombined = new List<sPlayerController>();
+    public List<PlayerData> friendliesCombined = new List<PlayerData>();
     public bool freezeInput = false;
     public KeyCode shortcutToThisCharacter;
+
+    //private int charactersHealthBeingUsed = 1;
 
     private void Awake()
     {
@@ -49,7 +52,7 @@ public class sPlayerController : MonoBehaviour
     {
         // Just so we don't initalize twice 
         if (!initalized) InitPlayer();
-        if (!playerAnimator) gameObject.GetComponent<Animator>();
+        //if (!playerAnimator) gameObject.GetComponent<Animator>();
     }
 
     private void OnTriggerEnter(Collider other)
@@ -70,8 +73,6 @@ public class sPlayerController : MonoBehaviour
             friendliesNearby.Remove(playerController);
         }
     }
-
-
 
     private void OnMouseDown()
     {
@@ -101,22 +102,6 @@ public class sPlayerController : MonoBehaviour
 
             if (friendliesNearby.Count > 0 && Input.GetKeyDown(mergeCharactersButton))
             {
-                //if (friendliesNearby.Count > 1)
-                //{
-                //    for (int i = 0; i < friendliesNearby.Count; i++)
-                //    {
-                //        MergePlayerCharacters(friendliesNearby[i]);
-                //        Destroy(friendliesNearby[i].gameObject);
-                //    }
-                //}
-                //else
-                //{
-                //    //MergePlayerCharacters(friendliesNearby[0]);
-                //    //Destroy(friendliesNearby[0].gameObject);
-                //}
-
-                //playerAIScript.healthBar.parent = playerAIScript.healthBarHolder;
-                //playerAIScript.ResetupHealthBar();
                 Debug.Log("Merging characters");
                 StartCoroutine(PlayMergingAnimation(friendliesNearby));
             }
@@ -134,28 +119,53 @@ public class sPlayerController : MonoBehaviour
             ControlThisCharacter();
     }
 
+    public void PlayerTakeDamage(float damage)
+    {
+        if (friendliesCombined.Count > 0)
+        {
+            friendliesCombined[0].health -= damage;
+            if (friendliesCombined[0].health <= 0)
+            {
+                int idx = 0;
+                // Search for the index that the friendlies combined is using
+                for (int i = 0; i < LevelManager.instance.playerCharactersGlobal.Count; i++)
+                {
+                    if (LevelManager.instance.playerCharactersGlobal[i] == friendliesCombined[0])
+                        idx = i;
+                }
+
+                LevelManager.instance.playerCharactersGlobal[idx].dead = true;
+                friendliesCombined.Remove(friendliesCombined[0]);
+                //LevelManager.instance.deadPlayers.Add(friendliesCombined[0]);
+            }
+        }
+
+        playerAIScript.AiTakeDamage(damage);
+    }
+
+
     public sPlayerController SpawnCharacterHere()
     {
         // Spawn the character
-        sAiController tmp = Instantiate(playerPrefab).GetComponent<sAiController>();
-        sPlayerController spawnedPlayer = tmp.gameObject.GetComponent<sPlayerController>();
-        tmp.health = friendliesCombined[0].playerAIScript.health;
-        Rigidbody rb = tmp.GetComponent<Rigidbody>();
+        sPlayerController spawnedPlayer = Instantiate(playerPrefab).GetComponent<sPlayerController>();
+        sAiController tmp = spawnedPlayer.transform.GetChild(2).GetComponent<sAiController>();
+        tmp.health = friendliesCombined[0].health;
+        Rigidbody rb = spawnedPlayer.GetComponent<Rigidbody>();
         Rigidbody rb2 = gameObject.GetComponent<Rigidbody>();
         rb.constraints = RigidbodyConstraints.FreezeAll;
-        rb.constraints = RigidbodyConstraints.FreezeAll;
-        tmp.maxHealth = friendliesCombined[0].playerAIScript.maxHealth;
+        rb2.constraints = RigidbodyConstraints.FreezeAll;
+        tmp.maxHealth = friendliesCombined[0].maxHealth;
         spawnedPlayer.damageOutput = friendliesCombined[0].damageOutput;
         tmp.transform.position = transform.position;
         tmp.transform.rotation = transform.rotation;
 
         // Remove everything off this player controller that was from that character
-        playerAIScript.SetHealth(-friendliesCombined[0].playerAIScript.health, false);
-        playerAIScript.SetNewMaxHealth(-friendliesCombined[0].playerAIScript.maxHealth, true, false, true);
+        playerAIScript.SetHealth(-friendliesCombined[0].health, false);
+        playerAIScript.SetNewMaxHealth(-friendliesCombined[0].maxHealth, true, false, true);
         damageOutput -= friendliesCombined[0].damageOutput;
 
         // Finished spawning the character
-        LevelManager.instance.playerCharactersAlive.Add(friendliesCombined[0]);
+        LevelManager.instance.playerCharactersSpawned.Add(spawnedPlayer);
         friendliesCombined.Remove(friendliesCombined[0]);
 
         return spawnedPlayer;
@@ -163,13 +173,14 @@ public class sPlayerController : MonoBehaviour
 
     IEnumerator PlayMergingAnimation(List<sPlayerController> playerCharacters)
     {
+        freezeInput = true;
         //Setup animations 
         playerAnimator.SetTrigger("Spawning");
         playerAnimator.SetBool("Leaving", false);
         for (int i = 0; i < playerCharacters.Count; i++)
         {
             Destroy(playerCharacters[i].GetComponent<Rigidbody>());
-            Destroy(playerCharacters[i].GetComponent<CapsuleCollider>());
+            Destroy(playerCharacters[i].GetComponent<BoxCollider>());
             //playerCharacters[i].GetComponent<CapsuleCollider>().isTrigger = true;
             playerCharacters[i].playerAnimator.SetTrigger("Spawning");
             playerCharacters[i].playerAnimator.SetBool("Leaving", false);
@@ -177,11 +188,12 @@ public class sPlayerController : MonoBehaviour
 
         //int remainingToEnter = playerCharacters.Count;
 
+        List<sPlayerController> mergedCharacters;
         // Move the characters towards the selected player character
         while (playerCharacters.Count > 0)
         {
+            mergedCharacters = new List<sPlayerController>();
             //Debug.Log(playerCharacters.Count);
-            List<sPlayerController> mergedCharacters = new List<sPlayerController>();
             for (int i = 0; i < playerCharacters.Count; i++)
             {
                 playerCharacters[i].transform.position = Vector3.MoveTowards(playerCharacters[i].transform.position, transform.position, tmpSpeed * Time.deltaTime);
@@ -196,7 +208,7 @@ public class sPlayerController : MonoBehaviour
                 {
                     sPlayerController playerCharacter = mergedCharacters[i];
                     playerCharacters.Remove(playerCharacter);
-                    MergePlayerCharacters(playerCharacter);
+                    MergePlayerCharacters(playerCharacter.thisPlayerData);
                     //remainingToEnter--;
                     Destroy(playerCharacter.gameObject);
                 }
@@ -207,6 +219,7 @@ public class sPlayerController : MonoBehaviour
         // Fades back in.
         playerAnimator.SetTrigger("Starting Spawn");
         playerAnimator.SetBool("Leaving", true);
+        freezeInput = false;
     }
 
     IEnumerator PlaySpawningAnimation(sPlayerController spawnedPlayer)
@@ -224,11 +237,11 @@ public class sPlayerController : MonoBehaviour
         spawnedPlayer.freezeInput = false;
         Rigidbody rb = spawnedPlayer.GetComponent<Rigidbody>();
         rb.constraints = RigidbodyConstraints.None;
-        rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
+        rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ | RigidbodyConstraints.FreezePositionY;
 
         Rigidbody rb2 = gameObject.GetComponent<Rigidbody>();
         rb2.constraints = RigidbodyConstraints.None;
-        rb2.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
+        rb2.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ | RigidbodyConstraints.FreezePositionY;
         freezeInput = false;
     }
     
@@ -244,10 +257,10 @@ public class sPlayerController : MonoBehaviour
     public void InitPlayer()
     {
         // Checking if this is on an instance or just being called
-        if (!playerAIScript)
-            playerAIScript = gameObject.GetComponent<sAiController>();
+        //if (!playerAIScript)
+            //playerAIScript = gameObject.GetComponent<sAiController>();
 
-        playerAIScript.InitAI(LevelManager.instance.playerCharactersGlobal[0].playerCharacterType, true);
+        playerAIScript.InitAI(LevelManager.instance.playerCharactersGlobal[0].playerType.playerCharacterType, true);
         attackCooldownTime = playerAIScript.aiType.attackRate;
         initalized = true;
         playerAIScript.stayPut = true;
@@ -255,16 +268,16 @@ public class sPlayerController : MonoBehaviour
         damageOutput = playerAIScript.aiType.damageOutput;
     }
 
-    public void MergePlayerCharacters(sPlayerController thePlayerCharacter)
+    public void MergePlayerCharacters(PlayerData thePlayerData)
     {
-        damageOutput += thePlayerCharacter.damageOutput;
+        damageOutput += thePlayerData.damageOutput;
         //playerAIScript.health += _health;
 
-        playerAIScript.SetHealth(thePlayerCharacter.playerAIScript.health, false);
-        playerAIScript.SetNewMaxHealth(thePlayerCharacter.playerAIScript.maxHealth, true, false, false);
+        playerAIScript.SetHealth(thePlayerData.health, false);
+        playerAIScript.SetNewMaxHealth(thePlayerData.maxHealth, true, false, false);
         //playerAIScript.maxHealth += _maxHealth;
         //LevelManager.instance.SetMerged(thePlayerCharacter.playerAIScript.aiType);
-        friendliesCombined.Add(thePlayerCharacter);
+        friendliesCombined.Add(thePlayerData);
     }
 
     public void ControlThisCharacter()

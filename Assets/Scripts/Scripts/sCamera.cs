@@ -11,6 +11,9 @@ public class sCamera : MonoBehaviour
     public Transform playerCharacterSelected;
     public float heightToFollowAt = 10f;
     public float offset = 5f;
+
+    public KeyCode nextPlayer;
+    public KeyCode prevPlayer;
     //public KeyCode[] switchPlayerCharacters;
 
     [Header("Boundaries")]
@@ -21,7 +24,7 @@ public class sCamera : MonoBehaviour
     public float zBoundaryMax = 8.5f;
 
     float originalHeight;
-
+    int idx = 0;
     void Awake()
     {
         if (instance == null)
@@ -64,6 +67,18 @@ public class sCamera : MonoBehaviour
         //        LevelManager.instance.playerCharactersAlive[0].ControlThisCharacter();
         //    }
         //} 
+        if (Input.GetKeyDown(nextPlayer))
+        {
+            idx++;
+            if (idx > LevelManager.instance.playerCharactersSpawned.Count - 1) idx = 0;
+            LevelManager.instance.playerCharactersSpawned[idx].ControlThisCharacter();
+        }
+        else if (Input.GetKeyDown(prevPlayer))
+        {
+            idx--;
+            if (idx < 0) idx = LevelManager.instance.playerCharactersSpawned.Count - 1;
+            LevelManager.instance.playerCharactersSpawned[idx].ControlThisCharacter();
+        }
     }
 
     void FollowObject()

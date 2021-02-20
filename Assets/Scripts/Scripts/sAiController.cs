@@ -96,7 +96,7 @@ public class sAiController : MonoBehaviour
                 }
                 destination = visibleTargets[0];
             }
-            else if (LevelManager.instance.playerCharactersAlive.Count > 0)
+            else if (LevelManager.instance.playerCharactersSpawned.Count > 0)
                 destination = sEnemySpawner.instance.FindClosestTarget(transform.position); 
         }
 
@@ -219,7 +219,7 @@ public class sAiController : MonoBehaviour
     }
 
     // TODO: Have this keep track of all the players characters (or keep track of it in sPlayerController) so that if the health is reduced completely enough for one character, they are eliminated, otherwise they come out with that much health
-    public void TakeDamage(float damage)
+    public void AiTakeDamage(float damage)
     {
         //health -= damage;
         if (healthBarHolder) SetHealth(-damage, false);
@@ -231,8 +231,9 @@ public class sAiController : MonoBehaviour
             {
                 if (stayPut)
                 {
-                    LevelManager.instance.playerCharactersAlive.Remove(gameObject.GetComponent<sPlayerController>());
-                    if (LevelManager.instance.playerCharactersAlive.Count == 0) LevelManager.instance.LoseGame();
+                    LevelManager.instance.playerCharactersSpawned.Remove(gameObject.GetComponent<sPlayerController>());
+                    if (LevelManager.instance.playerCharactersSpawned.Count == 0) LevelManager.instance.LoseGame();
+                    //LevelManager.instance.deadPlayers.Add(gameObject.GetComponent<sPlayerController>());
                 }
                 else
                 {
@@ -246,6 +247,8 @@ public class sAiController : MonoBehaviour
                 if (LevelManager.instance.currentCache.Count == 0) LevelManager.instance.LoseGame();
                 else Debug.Log(LevelManager.instance.currentCache.Count);
             }
+
+            // Is a player to be added to the dead
 
             Destroy(gameObject);
         }
@@ -274,7 +277,7 @@ public class sAiController : MonoBehaviour
 
     public void Melee()
     {
-        destination.GetComponent<sAiController>().TakeDamage(aiType.damageOutput);
+        destination.GetComponent<sAiController>().AiTakeDamage(aiType.damageOutput);
     }
 
     public void Shoot()
@@ -351,9 +354,10 @@ public class sAiController : MonoBehaviour
             {
                 float dsToTarget = Vector3.Distance(transform.position, target.position);
 
-                if (!Physics.Raycast(transform.position, dirToTaget, dsToTarget, obstacleMask) && (!target.GetComponent<sAiController>().aiType.isHidden || canSeeHiddenEnemies))
+                if (!Physics.Raycast(transform.position, dirToTaget, dsToTarget, obstacleMask))
                 {
-                    visibleTargets.Add(target);
+                    if (!target.GetComponent<sAiController>().aiType.isHidden || canSeeHiddenEnemies)
+                        visibleTargets.Add(target);
                 }
             }
         }

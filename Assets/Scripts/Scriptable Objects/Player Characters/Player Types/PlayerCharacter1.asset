@@ -9,9 +9,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 0}
-  m_Name: Player Character 4
-  m_EditorClassIdentifier: Assembly-CSharp::Player
+  m_Script: {fileID: 11500000, guid: e7fb80ca81c4413419d3223891352ade, type: 3}
+  m_Name: PlayerCharacter1
+  m_EditorClassIdentifier: 
   costToRevive: 500
-  playerCharacterType: {fileID: 11400000, guid: 69324bb8883a8b141bff0954226488a4,
+  playerCharacterType: {fileID: 11400000, guid: 83ba11c6854b6be40bb1df8c816490cc,
     type: 2}

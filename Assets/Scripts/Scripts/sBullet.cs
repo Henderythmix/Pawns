@@ -29,7 +29,11 @@ public class sBullet : MonoBehaviour
         if (collision.gameObject.CompareTag(enemy))
         {
             //Debug.Log("Sending take damage");
-            collision.gameObject.GetComponent<sAiController>().TakeDamage(damage);
+
+            // Is a player
+            if (collision.gameObject.GetComponent<sPlayerController>())
+                collision.gameObject.GetComponent<sPlayerController>().PlayerTakeDamage(damage);
+            else collision.gameObject.GetComponent<sAiController>().AiTakeDamage(damage);
         }
         Destroy(gameObject);
     }
