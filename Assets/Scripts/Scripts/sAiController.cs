@@ -81,9 +81,21 @@ public class sAiController : MonoBehaviour
 
     private void Update()
     {
+        if (Time.timeScale == 0)
+            return;
+
         if (!stayPut)
         {
             if (destination != null) aiAgent.SetDestination(destination.position);
+            else if (visibleTargets.Count > 0)
+            {
+                if (visibleTargets.Count > 1)
+                {
+                    if (visibleTargets[0] == null)
+                        visibleTargets.Remove(visibleTargets[0]);
+                }
+                destination = visibleTargets[0];
+            }
             else if (LevelManager.instance.playerCharactersAlive.Count > 0)
                 destination = sEnemySpawner.instance.FindClosestTarget(transform.position); 
         }
@@ -91,6 +103,8 @@ public class sAiController : MonoBehaviour
         if (currentState.Equals(aiState.COMBAT))
         {
             if (destination == null)
+                return;
+            else if (visibleTargets[0] == null)
                 return;
 
             Transform closestEnemy = visibleTargets[0];
@@ -204,6 +218,7 @@ public class sAiController : MonoBehaviour
         healthBarHolder.localScale = new Vector3(health, healthBarHolder.localScale.y, healthBarHolder.localScale.z);
     }
 
+    // TODO: Have this keep track of all the players characters (or keep track of it in sPlayerController) so that if the health is reduced completely enough for one character, they are eliminated, otherwise they come out with that much health
     public void TakeDamage(float damage)
     {
         //health -= damage;
