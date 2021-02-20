@@ -11,7 +11,7 @@ public class sCamera : MonoBehaviour
     public Transform playerCharacterSelected;
     public float heightToFollowAt = 10f;
     public float offset = 5f;
-    public KeyCode[] switchPlayerCharacters;
+    //public KeyCode[] switchPlayerCharacters;
 
     [Header("Boundaries")]
     [Space(20)]
@@ -47,23 +47,23 @@ public class sCamera : MonoBehaviour
         else
             FollowObject();
 
-        if (switchPlayerCharacters.Length > 0)
-        {
-            if (switchPlayerCharacters.Length > 1)
-            {
-                for (int i = 0; i < switchPlayerCharacters.Length; i++)
-                {
-                   if (Input.GetKeyDown(switchPlayerCharacters[i]) && LevelManager.instance.playerCharactersAlive[i] != null)
-                   {
-                        LevelManager.instance.playerCharactersAlive[i].ControlThisCharacter();
-                    }
-                }
-            }
-            else
-            {
-                LevelManager.instance.playerCharactersAlive[0].ControlThisCharacter();
-            }
-        } 
+        //if (switchPlayerCharacters.Length > 0)
+        //{
+        //    if (switchPlayerCharacters.Length > 1)
+        //    {
+        //        for (int i = 0; i < switchPlayerCharacters.Length; i++)
+        //        {
+        //           if (Input.GetKeyDown(switchPlayerCharacters[i]) && LevelManager.instance.playerCharactersAlive[i] != null)
+        //           {
+        //                LevelManager.instance.playerCharactersAlive[i].ControlThisCharacter();
+        //            }
+        //        }
+        //    }
+        //    else
+        //    {
+        //        LevelManager.instance.playerCharactersAlive[0].ControlThisCharacter();
+        //    }
+        //} 
     }
 
     void FollowObject()

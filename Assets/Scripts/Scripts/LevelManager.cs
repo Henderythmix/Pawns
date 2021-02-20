@@ -10,9 +10,13 @@ public class LevelManager : MonoBehaviour
     [Header("Data holder")]
     // Used for keeping track of all player characters and seeing if their dead or not.
     public Player[] playerCharactersGlobal;
+    [Tooltip("These controls will be added to the character itself.")]
+    public KeyCode[] controlsToSwitchCharacters;
     // Keeps track of all the current players merged instead of using the class for dynamic data.
-    public bool[] playerCharactersGlobalMerged;
-    public bool[] playerCharactersGlobalDead;
+    //public bool[] playerCharactersGlobalMerged;
+    //public bool[] playerCharactersGlobalDead;
+
+    public List<sPlayerController> deadPlayers = new List<sPlayerController>();
     public GameObject playerTemplate;
     // Used for keeping track of alive player characters
     public List<sPlayerController> playerCharactersAlive;
@@ -27,12 +31,12 @@ public class LevelManager : MonoBehaviour
             instance = this;
         }
 
-        if (playerCharactersGlobal.Length > 0)
-        {
-            //Debug.Log(playerCharactersGlobal.Length);
-            playerCharactersGlobalMerged = new bool[playerCharactersGlobal.Length];
-            playerCharactersGlobalDead = new bool[playerCharactersGlobal.Length];
-        }
+        //if (playerCharactersGlobal.Length > 0)
+        //{
+        //    //Debug.Log(playerCharactersGlobal.Length);
+        //    playerCharactersGlobalMerged = new bool[playerCharactersGlobal.Length];
+        //    //playerCharactersGlobalDead = new bool[playerCharactersGlobal.Length];
+        //}
         else Debug.LogError("No player types are set up in playerCharactersGlobal on the LevelManager script.");
 
         if (playerCharactersAlive.Count > 0) MergeAllStartingCharacters();
@@ -43,7 +47,7 @@ public class LevelManager : MonoBehaviour
     {
         // Set this since we're calling this in awake of this function
         playerCharactersAlive[0].playerAIScript = playerCharactersAlive[0].gameObject.GetComponent<sAiController>();
-        for (int i = 0; i < playerCharactersGlobal.Length; i++)
+        for (int i = 1; i < playerCharactersGlobal.Length; i++)
         {
             if (playerCharactersGlobal[i].playerCharacterType != playerCharactersAlive[0].playerAIScript.aiAgent)
             {
@@ -81,16 +85,16 @@ public class LevelManager : MonoBehaviour
 
     }
 
-    public void SetMerged(AI _typeMatcher)
-    {
-        for (int i = 0; i < playerCharactersGlobal.Length; i++)
-        {
-            if (playerCharactersGlobal[i].playerCharacterType == _typeMatcher)
-            {
-                playerCharactersGlobalMerged[i] = true;
-            }
-        }
-    }
+    //public void SetMerged(AI _typeMatcher)
+    //{
+    //    for (int i = 0; i < playerCharactersGlobal.Length; i++)
+    //    {
+    //        if (playerCharactersGlobal[i].playerCharacterType == _typeMatcher)
+    //        {
+    //            //playerCharactersGlobalMerged[i] = true;
+    //        }
+    //    }
+    //}
 
     //private void Update()
     //{
