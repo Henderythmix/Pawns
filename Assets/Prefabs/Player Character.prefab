@@ -983,14 +983,13 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 256
   characterSpeed: 10
-  switchControls: 0
-  damageOutput: 25
   playerPrefab: {fileID: 4305850633325228677}
   tmpSpeed: 5
   waitToSpawn: 2
   PlayerModel: {fileID: 4199320339643249380}
   playerAnimator: {fileID: 65218808422466603}
   playerAIScript: {fileID: 3340797009515901318}
+  damageOutput: 25
   thisPlayerData:
     health: 0
     maxHealth: 0
@@ -1001,6 +1000,7 @@ MonoBehaviour:
   friendliesCombined: []
   freezeInput: 0
   shortcutToThisCharacter: 0
+  invulnerable: 0
 --- !u!54 &4509340701178985450
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -1467,14 +1467,11 @@ MonoBehaviour:
   aiType: {fileID: 11400000, guid: 69324bb8883a8b141bff0954226488a4, type: 2}
   destination: {fileID: 0}
   shootPoint: {fileID: 4305850633069221081}
-  rotationSpeed: 3
+  rotationSpeed: 50
   controlled: 0
   player: 0
   cache: 0
   startingCharacter: 1
-  currentState: 0
-  health: 100
-  maxHealth: 100
   healthBar: {fileID: 148642712239574706}
   healthBarHolder: {fileID: 2629107234633576859}
   objectHoldingHealthBarHolder: {fileID: 4305850633325228678}
@@ -1491,6 +1488,9 @@ MonoBehaviour:
     m_Bits: 512
   aiAnimator: {fileID: 0}
   visibleTargets: []
+  currentState: 0
+  health: 100
+  maxHealth: 100
   aiAgent: {fileID: 0}
   orgRotation: {x: 0, y: 0, z: 0, w: 0}
 --- !u!1 &6037270238194047867
