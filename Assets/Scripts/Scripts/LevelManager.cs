@@ -9,7 +9,7 @@ public class LevelManager : MonoBehaviour
 
     [Header("Data holder")]
     // Used for keeping track of all player characters and seeing if their dead or not.
-    [HideInInspector]public List<PlayerData> playerCharactersGlobal = new List<PlayerData>();
+    public List<PlayerData> playerCharactersGlobal;
     public Player[] playerCharacters;
     [Tooltip("These controls will be added to the character itself.")]
     public KeyCode[] controlsToSwitchCharacters;
@@ -37,7 +37,7 @@ public class LevelManager : MonoBehaviour
         //    //playerCharactersGlobalDead = new bool[playerCharactersGlobal.Length];
         //}
         else Debug.LogError("No player types are set up in playerCharactersGlobal on the LevelManager script.");
-
+        playerCharactersGlobal = new List<PlayerData>();
         if (playerCharactersSpawned.Count > 0) MergeAllStartingCharacters();
         else Debug.LogError("You didn't add the players into the player characters alive");
     }
@@ -55,11 +55,12 @@ public class LevelManager : MonoBehaviour
             newPlayer.maxHealth = playerCharacters[i].playerCharacterType.health;
             newPlayer.playerType = playerCharacters[i];
             playerCharactersGlobal.Add(newPlayer);
+    
         }
         playerCharactersSpawned[0].thisPlayerData = playerCharactersGlobal[0];
         for (int i = 1; i < playerCharactersGlobal.Count; i++)
         {
-            playerCharactersSpawned[0].MergePlayerCharacters(playerCharactersGlobal[i]);
+            playerCharactersSpawned[0].MergePlayerCharacters(playerCharactersGlobal[i], null);
         }
         playerCharactersSpawned[0].playerAIScript.healthBar.parent = playerCharactersSpawned[0].playerAIScript.healthBarHolder;
         playerCharactersSpawned[0].playerAIScript.ResetupHealthBar();

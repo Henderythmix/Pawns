@@ -12,17 +12,16 @@ public class sAiController : MonoBehaviour
     public float rotationSpeed = 1.5f;
     [HideInInspector]public bool controlled = false;
     // For player characters
-    public bool stayPut = false;
+    public bool player = false;
     public bool cache = false;
     public bool startingCharacter = false;
 
-    [HideInInspector]public aiState currentState;
-    [HideInInspector]public float health = 0;
-    [HideInInspector]public float maxHealth = 0;
+
     [Tooltip("Put the actual health bar here, and put the empty GO in the health bar holder variable.")]
     public Transform healthBar;
     [Tooltip("Make sure to put the empty GO that is holding the health bar here, and the actual healthbar in Health Bar")]
     public Transform healthBarHolder;
+    public Transform objectHoldingHealthBarHolder;
 
     [Tooltip("At what distance should the AI stop moving if moving")]
     public float stopMovingAt = 3;
@@ -37,12 +36,17 @@ public class sAiController : MonoBehaviour
     public LayerMask obstacleMask;
     public Animator aiAnimator;
 
-    public List<Transform> visibleTargets = new List<Transform>();
+    public List<Transform> visibleTargets;
 
     //[Header("TURN OFF WHEN ENTERING PLAY")]
     //// Unity be randomly crashing due to the gizmo drawing, but need it for visualization. 
     //// So for now we'll just use this.
     //public bool turnOn = true;
+
+    [Header("Public for debugging, dont touch")]
+    public aiState currentState;
+    public float health = 0;
+    public float maxHealth = 0;
 
     bool attackCooldown = false;
     bool canSeeHiddenEnemies = false;
@@ -57,7 +61,7 @@ public class sAiController : MonoBehaviour
             StartCoroutine(FindTargetWithDelay(.2f));
             aiAgent = gameObject.GetComponent<NavMeshAgent>();
         }
-        if (!stayPut && !aiAnimator)
+        if (!player && !aiAnimator)
             aiAnimator = gameObject.GetComponent<Animator>();
 
         //if (destination == null)
@@ -72,7 +76,7 @@ public class sAiController : MonoBehaviour
         {
             LevelManager.instance.currentCache.Add(this);
             InitAI(aiType, false);
-            stayPut = true;
+            player = true;
         }
         if (aiAnimator)
             aiAnimator.SetBool("Moving", true);
@@ -84,21 +88,19 @@ public class sAiController : MonoBehaviour
         if (Time.timeScale == 0)
             return;
 
-        if (!stayPut)
+        //if (player) destination = null;
+        if (destination != null && !player) aiAgent.SetDestination(destination.position);
+        else if (visibleTargets.Count > 0)
         {
-            if (destination != null) aiAgent.SetDestination(destination.position);
-            else if (visibleTargets.Count > 0)
+            if (visibleTargets.Count > 1)
             {
-                if (visibleTargets.Count > 1)
-                {
-                    if (visibleTargets[0] == null)
-                        visibleTargets.Remove(visibleTargets[0]);
-                }
-                destination = visibleTargets[0];
+                if (visibleTargets[0] == null)
+                    visibleTargets.Remove(visibleTargets[0]);
             }
-            else if (LevelManager.instance.playerCharactersSpawned.Count > 0)
-                destination = sEnemySpawner.instance.FindClosestTarget(transform.position); 
+            destination = visibleTargets[0];
         }
+        else if (LevelManager.instance.playerCharactersSpawned.Count > 0 && !player)
+            destination = sEnemySpawner.instance.FindClosestTarget(transform.position); 
 
         if (currentState.Equals(aiState.COMBAT))
         {
@@ -112,6 +114,8 @@ public class sAiController : MonoBehaviour
             {
                 for (int i = 0; i < visibleTargets.Count; i++)
                 {
+                    if (visibleTargets.Count == 0) break;
+                    else i++;
                     float distance1 = Vector3.Distance(visibleTargets[i].position, transform.position);
                     float distance2 = Vector3.Distance(closestEnemy.position, transform.position);
                     if (distance1 < distance2)
@@ -120,10 +124,14 @@ public class sAiController : MonoBehaviour
                     }
                 }
             }
-            Quaternion lookRotation = Quaternion.LookRotation(destination.position);
-            lookRotation.y = 0;
+            //Debug.Log(closestEnemy.position);
+            Vector3 lookPos = closestEnemy.position - transform.position;
+            lookPos.y = 0;
+            Quaternion lookRotation = Quaternion.LookRotation(lookPos);
+
+            //Debug.Log(destination.position);
             transform.rotation = Quaternion.RotateTowards(transform.rotation, lookRotation, rotationSpeed * Time.deltaTime);
-            if (!stayPut)
+            if (!player)
             {
                 if (aiAgent.remainingDistance > stopMovingAt)
                 {
@@ -148,6 +156,7 @@ public class sAiController : MonoBehaviour
 
             if (!attackCooldown)
             {
+                Debug.Log("Firing at enemy. I am " + gameObject.name);
                 if (bulletPrefab) Shoot();
                 else Melee();
                 StartCoroutine("AttackCooldown");
@@ -155,7 +164,7 @@ public class sAiController : MonoBehaviour
         }
         else if (currentState.Equals(aiState.FINDING))
         {
-            if (stayPut)
+            if (player)
             {
                 if (transform.rotation != orgRotation)
                 {
@@ -175,7 +184,7 @@ public class sAiController : MonoBehaviour
             SetNewMaxHealth(_aiType.health, false, true, true);
         }
         aiType = _aiType;
-        stayPut = _playerCharacter;
+        player = _playerCharacter;
         canSeeHiddenEnemies = _aiType.canSeeHiddenEnemies;
     }
 
@@ -188,7 +197,7 @@ public class sAiController : MonoBehaviour
             maxHealth = _newMaxHealth;
         // Ungroup and then regroup the health bar to accomdate new max health
         if (healthBar.parent = healthBarHolder)
-            healthBar.parent = transform;
+            healthBar.parent = objectHoldingHealthBarHolder;
 
         healthBarHolder.localScale = new Vector3(maxHealth, healthBarHolder.localScale.y, healthBarHolder.localScale.z);
 
@@ -224,15 +233,23 @@ public class sAiController : MonoBehaviour
         //health -= damage;
         if (healthBarHolder) SetHealth(-damage, false);
 
-        Debug.Log(gameObject.name + " is taking damage");
+        //Debug.Log(gameObject.name + " is taking damage");
         if (health <= 0)
         {
             if (!cache)
             {
-                if (stayPut)
+                if (player)
                 {
-                    LevelManager.instance.playerCharactersSpawned.Remove(gameObject.GetComponent<sPlayerController>());
-                    if (LevelManager.instance.playerCharactersSpawned.Count == 0) LevelManager.instance.LoseGame();
+                    LevelManager lmi = LevelManager.instance;
+                    lmi.playerCharactersSpawned.Remove(gameObject.GetComponent<sPlayerController>());
+                    if (lmi.playerCharactersSpawned.Count == 0) lmi.LoseGame();
+                    //Find this aiType and set it to dead
+                    for (int i = 0; i < lmi.playerCharactersGlobal.Count; i++)
+                    {
+                        if (lmi.playerCharactersGlobal[i].playerType.playerCharacterType == aiType) {
+                            lmi.playerCharactersGlobal[i].dead = true;
+                        }
+                    }
                     //LevelManager.instance.deadPlayers.Add(gameObject.GetComponent<sPlayerController>());
                 }
                 else
@@ -249,24 +266,13 @@ public class sAiController : MonoBehaviour
             }
 
             // Is a player to be added to the dead
-
-            Destroy(gameObject);
+            if (!player)
+                Destroy(gameObject);
+            else
+                Destroy(transform.parent.gameObject);
         }
     }
 
-    //IEnumerator AttackWhenReady()
-    //{
-    //    while (currentState.Equals(aiState.COMBAT))
-    //    {
-    //        yield return new WaitForSeconds(aiType.attackRate);
-    //        if (bulletPrefab)
-    //            Shoot();
-    //        else if (aiAgent.isStopped)
-    //            Melee();
-    //    }
-
-
-    //}
 
     IEnumerator AttackCooldown()
     {
@@ -283,7 +289,10 @@ public class sAiController : MonoBehaviour
     public void Shoot()
     {
         sBullet bullet = Instantiate(bulletPrefab).GetComponent<sBullet>();
-        bullet.damage = aiType.damageOutput;
+        float dmg = aiType.damageOutput;
+        if (player)
+            if (gameObject.transform.parent.gameObject.GetComponent<sPlayerController>()) dmg = gameObject.transform.parent.gameObject.GetComponent<sPlayerController>().damageOutput;
+        bullet.damage = dmg;
         bullet.enemy = aiType.enemy;
         if (aiType.enemy == "None") Debug.LogError("There isn't any tag setup on the aiType.enemy.");
         bullet.transform.rotation = shootPoint.rotation;
@@ -298,8 +307,11 @@ public class sAiController : MonoBehaviour
         {
             yield return new WaitForSeconds(delay);
             // If this ai is not being controlled
+            visibleTargets = new List<Transform>();
             if (!controlled)
+            {
                 FindVisibleTargets();
+            }
             else if (visibleTargets.Count > 0)
                 visibleTargets.Clear();
 
@@ -322,12 +334,13 @@ public class sAiController : MonoBehaviour
 
     void ReturnToOriginals()
     {
-        if (stayPut)
+        if (player)
         {
             transform.rotation = orgRotation;
         }
         else
         {
+            if (originalDestination == null) originalDestination = sEnemySpawner.instance.FindClosestTarget(transform.position);
             aiAgent.SetDestination(originalDestination.position);
         }
     }
@@ -335,7 +348,7 @@ public class sAiController : MonoBehaviour
     // Get all the original stuff for when we need to return;
     void CollectOrginals()
     {
-        if (stayPut)
+        if (player)
             orgRotation = transform.rotation;
         else
             originalDestination = destination;
@@ -356,8 +369,8 @@ public class sAiController : MonoBehaviour
 
                 if (!Physics.Raycast(transform.position, dirToTaget, dsToTarget, obstacleMask))
                 {
-                    if (!target.GetComponent<sAiController>().aiType.isHidden || canSeeHiddenEnemies)
-                        visibleTargets.Add(target);
+                    //if (!target.GetComponent<sAiController>().aiType.isHidden || canSeeHiddenEnemies)
+                    visibleTargets.Add(target);
                 }
             }
         }
@@ -392,7 +405,8 @@ public class sAiController : MonoBehaviour
         {
             foreach (Transform visibleTarget in visibleTargets)
             {
-                Handles.DrawLine(transform.position, visibleTarget.position);
+                if (visibleTarget != null)
+                    Handles.DrawLine(transform.position, visibleTarget.position);
             }
         }
         //}

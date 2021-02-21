@@ -2,26 +2,31 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class sPlayerController : MonoBehaviour
 {
     public KeyCode leavePlayerCharacter;
     public KeyCode spawnCharacterHere;
     public KeyCode mergeCharactersButton;
+    public LayerMask playerMask;
     //public KeyCode spawnPlayerCharacter;
     public float characterSpeed = 5.0f;
-    [Tooltip("Temporary variable to see which controls feel better.")]
-    public bool switchControls = false;
-    public float damageOutput = 0;
+    //[Tooltip("Temporary variable to see which controls feel better.")]
+    //public bool switchControls = false;
     public GameObject playerPrefab;
 
     public float tmpSpeed = 5;
+    [Tooltip("How much time does it take for the player to be able to spawn or merge again")]
+    public float waitToSpawn = 0.5f;
 
     // For the awake and start functions
     bool initalized = false;
 
     float attackCooldownTime;
     bool attackOnCooldown = false;
+    bool cooldown = false;
+    // Use for when the player can't control the character, aka merging and spawning
 
     
     [Header("Other Components")]
@@ -33,19 +38,21 @@ public class sPlayerController : MonoBehaviour
     [Header("Public for debugging only, dont touch")]
     [Space(20)]
     public sAiController playerAIScript;
+    public float damageOutput = 0;
     public PlayerData thisPlayerData;
-    public List<sPlayerController> friendliesNearby = new List<sPlayerController>();
-    public List<PlayerData> friendliesCombined = new List<PlayerData>();
+    public List<sPlayerController> friendliesNearby;
+    public List<PlayerData> friendliesCombined;
     public bool freezeInput = false;
     public KeyCode shortcutToThisCharacter;
+    public bool invulnerable = false;
 
     //private int charactersHealthBeingUsed = 1;
 
     private void Awake()
     {
         // LevelManager.instance doesn't exist, then we're doing this in start
-        if (LevelManager.instance) InitPlayer();
-
+        //if (LevelManager.instance) InitPlayer();
+        friendliesCombined = new List<PlayerData>();
     }
 
     private void Start()
@@ -55,38 +62,33 @@ public class sPlayerController : MonoBehaviour
         //if (!playerAnimator) gameObject.GetComponent<Animator>();
     }
 
-    private void OnTriggerEnter(Collider other)
-    {
-        sPlayerController playerController = other.gameObject.GetComponent<sPlayerController>();
-        if (playerController)
-        {
-            Debug.Log("Found a friendly");
-            friendliesNearby.Add(playerController);
-        }
-    }
-
-    private void OnTriggerExit(Collider other)
-    {
-        sPlayerController playerController = other.gameObject.GetComponent<sPlayerController>();
-        if (playerController)
-        {
-            friendliesNearby.Remove(playerController);
-        }
-    }
-
     private void OnMouseDown()
     {
         ControlThisCharacter();
     }
 
 
+    IEnumerator DisplayTimer(float time)
+    {
+        cooldown = true;
+        cHudManager.instance.timerText.gameObject.SetActive(true);
+        while (time > 0)
+        {
+            time -= Time.deltaTime;
+            float timeDisplay = Mathf.Round(time * 10f) / 10f;
+            cHudManager.instance.timerText.text = timeDisplay.ToString();
+            yield return new WaitForEndOfFrame();
+        }
+        cHudManager.instance.timerText.gameObject.SetActive(false);
+        cooldown = false;
+    }
+
     private void Update()
     {
-        if (playerAIScript.controlled && !freezeInput && Time.timeScale != 0)
+
+        if (!playerAIScript.controlled && playerAnimator.GetBool("Moving")) playerAnimator.SetBool("Moving", false);
+        if (playerAIScript.controlled)
         {
-            Rotation();
-            Move();
-            
             if (Input.GetKey(leavePlayerCharacter) || sCamera.instance.playerCharacterSelected != transform)
             {
                 if (sCamera.instance.playerCharacterSelected == transform)
@@ -94,26 +96,53 @@ public class sPlayerController : MonoBehaviour
                 playerAIScript.controlled = false;
             }
 
-            if (Input.GetMouseButton(0) && !attackOnCooldown)
+            if (!freezeInput && Time.timeScale != 0)
             {
-                playerAIScript.Shoot();
-                StartCoroutine("PlayerAttackCooldown", attackCooldownTime);
-            }
+                Rotation();
+                Move();
 
-            if (friendliesNearby.Count > 0 && Input.GetKeyDown(mergeCharactersButton))
-            {
-                Debug.Log("Merging characters");
-                StartCoroutine(PlayMergingAnimation(friendliesNearby));
-            }
+                //if (Input.GetKey(leavePlayerCharacter) || sCamera.instance.playerCharacterSelected != transform)
+                //{
+                //    if (sCamera.instance.playerCharacterSelected == transform)
+                //        sCamera.instance.playerCharacterSelected = null;
+                //    playerAIScript.controlled = false;
+                //}
 
-            if (Input.GetKeyDown(spawnCharacterHere) && friendliesCombined.Count > 0)
-            {
-                Debug.Log("Placing down playable character");
-                //SpawnCharacterHere();
-                StartCoroutine(StartSpawningAnim());
+                if (Input.GetMouseButton(0) && !attackOnCooldown)
+                {
+                    playerAIScript.Shoot();
+                    StartCoroutine("PlayerAttackCooldown", attackCooldownTime);
+                }
+
+                Collider[] playerCharacters = Physics.OverlapSphere(transform.position, 10, playerMask);
+                friendliesNearby = new List<sPlayerController>();
+                foreach (Collider player in playerCharacters)
+                {
+                    // If it's a player (known by the tag name)
+                    if (player.gameObject.CompareTag(gameObject.tag) && player.gameObject != gameObject)
+                    {
+                        friendliesNearby.Add(player.GetComponent<sPlayerController>());
+                    }
+                }
+
+                if (friendliesNearby.Count > 0 && Input.GetKeyDown(mergeCharactersButton) && !cooldown)
+                {
+                    Debug.Log("Merging characters");
+                    StartCoroutine(PlayMergingAnimation(friendliesNearby));
+                    StartCoroutine(DisplayTimer(waitToSpawn));
+                }
+
+
+                if (Input.GetKeyDown(spawnCharacterHere) && friendliesCombined.Count > 0 && !cooldown)
+                {
+                    Debug.Log("Placing down playable character");
+                    //SpawnCharacterHere();
+                    StartCoroutine(StartSpawningAnim());
+                    StartCoroutine(DisplayTimer(waitToSpawn));
+                }
             }
+            
         }
-
 
         if (Input.GetKeyDown(shortcutToThisCharacter))
             ControlThisCharacter();
@@ -121,6 +150,10 @@ public class sPlayerController : MonoBehaviour
 
     public void PlayerTakeDamage(float damage)
     {
+
+        // Don't take damage if invulnerable
+        if (invulnerable) return;
+
         if (friendliesCombined.Count > 0)
         {
             friendliesCombined[0].health -= damage;
@@ -179,7 +212,7 @@ public class sPlayerController : MonoBehaviour
         playerAnimator.SetBool("Leaving", false);
         for (int i = 0; i < playerCharacters.Count; i++)
         {
-            Destroy(playerCharacters[i].GetComponent<Rigidbody>());
+            //Destroy(playerCharacters[i].GetComponent<Rigidbody>());
             Destroy(playerCharacters[i].GetComponent<BoxCollider>());
             //playerCharacters[i].GetComponent<CapsuleCollider>().isTrigger = true;
             playerCharacters[i].playerAnimator.SetTrigger("Spawning");
@@ -208,7 +241,7 @@ public class sPlayerController : MonoBehaviour
                 {
                     sPlayerController playerCharacter = mergedCharacters[i];
                     playerCharacters.Remove(playerCharacter);
-                    MergePlayerCharacters(playerCharacter.thisPlayerData);
+                    MergePlayerCharacters(playerCharacter.thisPlayerData, playerCharacter);
                     //remainingToEnter--;
                     Destroy(playerCharacter.gameObject);
                 }
@@ -235,6 +268,7 @@ public class sPlayerController : MonoBehaviour
         }
 
         spawnedPlayer.freezeInput = false;
+        spawnedPlayer.invulnerable = false;
         Rigidbody rb = spawnedPlayer.GetComponent<Rigidbody>();
         rb.constraints = RigidbodyConstraints.None;
         rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ | RigidbodyConstraints.FreezePositionY;
@@ -243,11 +277,15 @@ public class sPlayerController : MonoBehaviour
         rb2.constraints = RigidbodyConstraints.None;
         rb2.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ | RigidbodyConstraints.FreezePositionY;
         freezeInput = false;
+        invulnerable = false;
+
+        spawnedPlayer.InitPlayer();
     }
     
     IEnumerator StartSpawningAnim()
     {
         freezeInput = true;
+        invulnerable = true;
         playerAnimator.SetTrigger("Spawning");
         yield return new WaitForSeconds(0.05f);
         sPlayerController spawnedPlayer = SpawnCharacterHere();
@@ -256,28 +294,34 @@ public class sPlayerController : MonoBehaviour
 
     public void InitPlayer()
     {
-        // Checking if this is on an instance or just being called
-        //if (!playerAIScript)
-            //playerAIScript = gameObject.GetComponent<sAiController>();
 
-        playerAIScript.InitAI(LevelManager.instance.playerCharactersGlobal[0].playerType.playerCharacterType, true);
+        playerAIScript.InitAI(thisPlayerData.playerType.playerCharacterType, true);
         attackCooldownTime = playerAIScript.aiType.attackRate;
         initalized = true;
-        playerAIScript.stayPut = true;
-        //LevelManager.instance.playerCharactersAlive.Add(this);
-        damageOutput = playerAIScript.aiType.damageOutput;
+        playerAIScript.player = true;
+;
     }
 
-    public void MergePlayerCharacters(PlayerData thePlayerData)
+    public void MergePlayerCharacters(PlayerData thePlayerData, sPlayerController thePlayer)
     {
+        if (thePlayer)
+        {
+            if (thePlayer.friendliesCombined.Count > 0)
+            {
+                for (int i = 0; i < thePlayer.friendliesCombined.Count; i++)
+                {
+                    friendliesCombined.Add(thePlayer.friendliesCombined[i]);
+                }
+            }
+        }
+
         damageOutput += thePlayerData.damageOutput;
         //playerAIScript.health += _health;
 
         playerAIScript.SetHealth(thePlayerData.health, false);
         playerAIScript.SetNewMaxHealth(thePlayerData.maxHealth, true, false, false);
-        //playerAIScript.maxHealth += _maxHealth;
-        //LevelManager.instance.SetMerged(thePlayerCharacter.playerAIScript.aiType);
         friendliesCombined.Add(thePlayerData);
+        //StartCoroutine(DisplayTimer(waitToSpawn));
     }
 
     public void ControlThisCharacter()
@@ -307,32 +351,32 @@ public class sPlayerController : MonoBehaviour
 
 
             //Debug.Log(actualSpeed);
-            if (switchControls)
+            //if (switchControls)
+            //{
+            //    // If we're using both the forward/backward and left/right keys to keep a consistent speed
+            //    if (vertical != 0 && horizontal != 0)
+            //    {
+            //        actualSpeed *= 0.5f;
+            //    }
+            //    if (playerAnimator)
+            //        playerAnimator.SetBool("Moving", true);
+            //    transform.position += (transform.forward * vertical) * actualSpeed * Time.deltaTime;
+            //    transform.position += (transform.right * horizontal) * actualSpeed * Time.deltaTime;
+            //}
+            //else
+            //{
+            if (vertical != 0 && horizontal != 0)
             {
-                // If we're using both the forward/backward and left/right keys to keep a consistent speed
-                if (vertical != 0 && horizontal != 0)
-                {
-                    actualSpeed *= 0.5f;
-                }
-                if (playerAnimator)
-                    playerAnimator.SetBool("Moving", true);
-                transform.position += (transform.forward * vertical) * actualSpeed * Time.deltaTime;
-                transform.position += (transform.right * horizontal) * actualSpeed * Time.deltaTime;
+                actualSpeed *= 0.75f;
             }
-            else
-            {
-                if (vertical != 0 && horizontal != 0)
-                {
-                    actualSpeed *= 0.75f;
-                }
-                //Debug.Log(transform.position.x + " before transitioning");
-                //Debug.Log(horizontal);
+            //Debug.Log(transform.position.x + " before transitioning");
+            //Debug.Log(horizontal);
 
-                if (playerAnimator)
-                    playerAnimator.SetBool("Moving", true);
-                transform.position = new Vector3(transform.position.x + (horizontal* actualSpeed * Time.deltaTime), transform.position.y, transform.position.z + (vertical * actualSpeed * Time.deltaTime));
+            if (playerAnimator)
+                playerAnimator.SetBool("Moving", true);
+            transform.position = new Vector3(transform.position.x + (horizontal* actualSpeed * Time.deltaTime), transform.position.y, transform.position.z + (vertical * actualSpeed * Time.deltaTime));
                 //Debug.Log(transform.position.x + " after transitioning");
-            }
+            //}
         }
         else if (playerAnimator)
             playerAnimator.SetBool("Moving", false);

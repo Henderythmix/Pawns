@@ -84,11 +84,22 @@ public class sEnemySpawner : MonoBehaviour
 
     public Transform FindClosestTarget(Vector3 spawnerPos)
     {
+        if (LevelManager.instance.playerCharactersSpawned[0] == null) LevelManager.instance.playerCharactersSpawned.Remove(LevelManager.instance.playerCharactersSpawned[0]);
+        if (LevelManager.instance.playerCharactersSpawned.Count <= 0)
+        {
+            LevelManager.instance.LoseGame();
+            return null;
+        }
+
         Transform closestEnemy = LevelManager.instance.playerCharactersSpawned[0].transform;
         if (LevelManager.instance.playerCharactersSpawned.Count > 0)
         {
             for (int i = 0; i < LevelManager.instance.playerCharactersSpawned.Count; i++)
             {
+
+                if (LevelManager.instance.playerCharactersSpawned.Count == 0) break;
+                else if (LevelManager.instance.playerCharactersSpawned[i] == null && LevelManager.instance.playerCharactersSpawned.Count - 1 != i) i++;
+                else break;
                 // If we've found a playable character closer to the spawn location chosen, we'll go to there instead
                 if (Vector3.Distance(LevelManager.instance.playerCharactersSpawned[i].transform.position, spawnerPos) < Vector3.Distance(closestEnemy.position, spawnerPos))
                     closestEnemy = LevelManager.instance.playerCharactersSpawned[i].transform;

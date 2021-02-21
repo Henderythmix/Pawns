@@ -11,7 +11,7 @@ public class cHudManager : MonoBehaviour
     }
 
 
-    public Text roundTimerText;
+    public Text timerText;
     public Text moneyText;
     public Text roundLevelText;
     public GameObject playerTabPrefab;

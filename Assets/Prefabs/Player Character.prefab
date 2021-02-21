@@ -979,14 +979,24 @@ MonoBehaviour:
   leavePlayerCharacter: 304
   spawnCharacterHere: 32
   mergeCharactersButton: 9
+  playerMask:
+    serializedVersion: 2
+    m_Bits: 256
   characterSpeed: 10
   switchControls: 0
   damageOutput: 25
   playerPrefab: {fileID: 4305850633325228677}
   tmpSpeed: 5
-  playerAIScript: {fileID: 3340797009515901318}
+  waitToSpawn: 2
   PlayerModel: {fileID: 4199320339643249380}
   playerAnimator: {fileID: 65218808422466603}
+  playerAIScript: {fileID: 3340797009515901318}
+  thisPlayerData:
+    health: 0
+    maxHealth: 0
+    damageOutput: 0
+    playerType: {fileID: 0}
+    dead: 0
   friendliesNearby: []
   friendliesCombined: []
   freezeInput: 0
@@ -1438,7 +1448,7 @@ SphereCollider:
   m_GameObject: {fileID: 6001248241805375967}
   m_Material: {fileID: 0}
   m_IsTrigger: 1
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 2
   m_Radius: 10
   m_Center: {x: 0, y: 0, z: 0}
@@ -1459,14 +1469,15 @@ MonoBehaviour:
   shootPoint: {fileID: 4305850633069221081}
   rotationSpeed: 3
   controlled: 0
-  stayPut: 1
+  player: 0
   cache: 0
   startingCharacter: 1
   currentState: 0
   health: 100
   maxHealth: 100
-  healthBar: {fileID: 2629107234633576859}
-  healthBarHolder: {fileID: 148642712239574706}
+  healthBar: {fileID: 148642712239574706}
+  healthBarHolder: {fileID: 2629107234633576859}
+  objectHoldingHealthBarHolder: {fileID: 4305850633325228678}
   stopMovingAt: 3
   bulletPrefab: {fileID: 8464240472271784428, guid: ac6acf7cc614117478712db6fc9677b9,
     type: 3}
