@@ -19,4 +19,5 @@ MonoBehaviour:
   isHidden: 0
   currentState: 0
   attackRate: 0.5
+  rewardForEliminating: 10
   enemy: Player

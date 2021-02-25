@@ -9,6 +9,9 @@ public class sPlayerController : MonoBehaviour
     public KeyCode leavePlayerCharacter;
     public KeyCode spawnCharacterHere;
     public KeyCode mergeCharactersButton;
+    public AudioSource mergeSound;
+    public AudioSource unmergeSound;
+    public cHudManager instancedHud;
     public LayerMask playerMask;
     //public KeyCode spawnPlayerCharacter;
     public float characterSpeed = 5.0f;
@@ -52,7 +55,11 @@ public class sPlayerController : MonoBehaviour
     {
         // LevelManager.instance doesn't exist, then we're doing this in start
         //if (LevelManager.instance) InitPlayer();
-        friendliesCombined = new List<PlayerData>();
+        if (LevelManager.instance)
+            friendliesCombined = new List<PlayerData>();
+
+
+        //if (friendliesCombined == null || friendliesCombined.Count > 0)
     }
 
     private void Start()
@@ -64,7 +71,13 @@ public class sPlayerController : MonoBehaviour
 
     private void OnMouseDown()
     {
+        gameObject.GetComponent<Rigidbody>().constraints = RigidbodyConstraints.None;
+        gameObject.GetComponent<Rigidbody>().constraints = RigidbodyConstraints.FreezePositionY | RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationY | RigidbodyConstraints.FreezeRotationZ;
+
         ControlThisCharacter();
+        cHudManager.instance.mergedObjectHolder.SetActive(true);
+        if (cHudManager.instance) cHudManager.instance.mergedNumberText.text = "Merged: " + friendliesCombined.Count;
+        else instancedHud.mergedNumberText.text = "Merged: " + friendliesCombined.Count;
     }
 
 
@@ -89,8 +102,18 @@ public class sPlayerController : MonoBehaviour
         if (!playerAIScript.controlled && playerAnimator.GetBool("Moving")) playerAnimator.SetBool("Moving", false);
         if (playerAIScript.controlled)
         {
+            //if (Input.GetKey(leavePlayerCharacter))
+            if (Input.GetKey(leavePlayerCharacter))
+            {
+                if (cHudManager.instance) cHudManager.instance.mergedObjectHolder.SetActive(false);
+                else instancedHud.mergedObjectHolder.SetActive(false);
+            }
+
             if (Input.GetKey(leavePlayerCharacter) || sCamera.instance.playerCharacterSelected != transform)
             {
+                gameObject.GetComponent<Rigidbody>().constraints = RigidbodyConstraints.None;
+                gameObject.GetComponent<Rigidbody>().constraints = RigidbodyConstraints.FreezePositionY | RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
+
                 if (sCamera.instance.playerCharacterSelected == transform)
                     sCamera.instance.playerCharacterSelected = null;
                 playerAIScript.controlled = false;
@@ -169,6 +192,9 @@ public class sPlayerController : MonoBehaviour
 
                 LevelManager.instance.playerCharactersGlobal[idx].dead = true;
                 friendliesCombined.Remove(friendliesCombined[0]);
+                if (cHudManager.instance) cHudManager.instance.mergedNumberText.text = "Merged: " + friendliesCombined.Count;
+                else instancedHud.mergedNumberText.text = "Merged: " + friendliesCombined.Count;
+
                 //LevelManager.instance.deadPlayers.Add(friendliesCombined[0]);
             }
         }
@@ -200,12 +226,14 @@ public class sPlayerController : MonoBehaviour
         // Finished spawning the character
         LevelManager.instance.playerCharactersSpawned.Add(spawnedPlayer);
         friendliesCombined.Remove(friendliesCombined[0]);
-
+        if (cHudManager.instance) cHudManager.instance.mergedNumberText.text = "Merged: " + friendliesCombined.Count;
+        else instancedHud.mergedNumberText.text = "Merged: " + friendliesCombined.Count;
         return spawnedPlayer;
     }
 
     IEnumerator PlayMergingAnimation(List<sPlayerController> playerCharacters)
     {
+        mergeSound.Play();
         freezeInput = true;
         //Setup animations 
         playerAnimator.SetTrigger("Spawning");
@@ -257,6 +285,7 @@ public class sPlayerController : MonoBehaviour
 
     IEnumerator PlaySpawningAnimation(sPlayerController spawnedPlayer)
     {
+        unmergeSound.Play();
         spawnedPlayer.playerAnimator.SetTrigger("Starting Spawn");
         spawnedPlayer.freezeInput = true;
         playerAnimator.SetTrigger("Starting Spawn");
@@ -278,7 +307,8 @@ public class sPlayerController : MonoBehaviour
         rb2.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ | RigidbodyConstraints.FreezePositionY;
         freezeInput = false;
         invulnerable = false;
-
+        if (cHudManager.instance) cHudManager.instance.mergedNumberText.text = "Merged: " + friendliesCombined.Count;
+        else instancedHud.mergedNumberText.text = "Merged: " + friendliesCombined.Count;
         spawnedPlayer.InitPlayer();
     }
     
@@ -314,6 +344,11 @@ public class sPlayerController : MonoBehaviour
                 }
             }
         }
+        if (cHudManager.instance) cHudManager.instance.mergedNumberText.text = "Merged: " + friendliesCombined.Count;
+        else instancedHud.mergedNumberText.text = "Merged: " + friendliesCombined.Count;
+
+
+        //Debug.Log("Merging a character");
 
         damageOutput += thePlayerData.damageOutput;
         //playerAIScript.health += _health;

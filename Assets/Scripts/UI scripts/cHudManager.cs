@@ -12,8 +12,11 @@ public class cHudManager : MonoBehaviour
 
 
     public Text timerText;
+    public Text endOfWaveTimerText;
     public Text moneyText;
     public Text roundLevelText;
+    public GameObject mergedObjectHolder;
+    public Text mergedNumberText;
     public GameObject playerTabPrefab;
     public Transform areaToMergeTabs;
 
@@ -23,16 +26,16 @@ public class cHudManager : MonoBehaviour
         moneyText.text = LevelManager.instance.playersMoney.ToString();
     }
 
-    IEnumerator mergePlayerTabs(List<Transform> tabsBeingMerged)
+    //IEnumerator mergePlayerTabs(List<Transform> tabsBeingMerged)
+    //{
+    //    while (tabsBeingMerged.Count > 0)
+    //    {
+
+    //    }
+    //    yield return new WaitForEndOfFrame();
+    //}
+    public void LoadScene(int idx)
     {
-        while (tabsBeingMerged.Count > 0)
-        {
-            
-        }
-        yield return new WaitForEndOfFrame();
-    }
-    public void PlayAgain()
-    {
-        GameManager.instance.LoadScene(0);
+        GameManager.instance.LoadScene(idx);
     }
 }

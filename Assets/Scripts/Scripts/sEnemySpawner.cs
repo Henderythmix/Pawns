@@ -48,6 +48,7 @@ public class sEnemySpawner : MonoBehaviour
             else
             {
                 PrepareNextRound();
+                StartCoroutine("DisplayTime");
                 StartCoroutine(WaitSometime(timeInBetweenRounds, true));
             }
         }
@@ -58,13 +59,14 @@ public class sEnemySpawner : MonoBehaviour
         if (spawnerPositions.Length > 0)
         {
             int randomLocation = Random.Range(0, spawnerPositions.Length);
+            //Debug.Log(randomLocation);
             int randomType = Random.Range(0, typesOfAiToSpawn.Length);
             sAiController enemy = Instantiate(enemyPrefab).GetComponent<sAiController>();
             if (typesOfAiToSpawn.Length > 0)
             {
                 enemy.aiType = typesOfAiToSpawn[randomType];
             }
-            
+            //Debug.Log(spawnerPositions[randomLocation].position);
             // Unity NavMeshAgent issues, cause factoring new positions is to hard.
             enemy.aiAgent.enabled = false;
             enemy.transform.position = spawnerPositions[randomLocation].position;
@@ -82,7 +84,7 @@ public class sEnemySpawner : MonoBehaviour
             Debug.LogError("There isn't any spawner positions set on sEnemySpawner.");
     }
 
-    public Transform FindClosestTarget(Vector3 spawnerPos)
+    public Transform FindClosestTarget(Vector3 position)
     {
         if (LevelManager.instance.playerCharactersSpawned[0] == null) LevelManager.instance.playerCharactersSpawned.Remove(LevelManager.instance.playerCharactersSpawned[0]);
         if (LevelManager.instance.playerCharactersSpawned.Count <= 0)
@@ -91,7 +93,7 @@ public class sEnemySpawner : MonoBehaviour
             return null;
         }
 
-        Transform closestEnemy = LevelManager.instance.playerCharactersSpawned[0].transform;
+        Transform closestTarget = LevelManager.instance.playerCharactersSpawned[0].transform;
         if (LevelManager.instance.playerCharactersSpawned.Count > 0)
         {
             for (int i = 0; i < LevelManager.instance.playerCharactersSpawned.Count; i++)
@@ -101,11 +103,25 @@ public class sEnemySpawner : MonoBehaviour
                 else if (LevelManager.instance.playerCharactersSpawned[i] == null && LevelManager.instance.playerCharactersSpawned.Count - 1 != i) i++;
                 else break;
                 // If we've found a playable character closer to the spawn location chosen, we'll go to there instead
-                if (Vector3.Distance(LevelManager.instance.playerCharactersSpawned[i].transform.position, spawnerPos) < Vector3.Distance(closestEnemy.position, spawnerPos))
-                    closestEnemy = LevelManager.instance.playerCharactersSpawned[i].transform;
+                if (Vector3.Distance(LevelManager.instance.playerCharactersSpawned[i].transform.position, position) < Vector3.Distance(closestTarget.position, position))
+                    closestTarget = LevelManager.instance.playerCharactersSpawned[i].transform;
             }
         }
-        return closestEnemy;
+        if (LevelManager.instance.currentCache.Count > 0)
+        {
+            for (int i = 0; i < LevelManager.instance.currentCache.Count; i++)
+            {
+                if (LevelManager.instance.currentCache[i] != null)
+                {
+                    Transform cachePos = LevelManager.instance.currentCache[i].transform;
+                    if (Vector3.Distance(cachePos.position, position) < Vector3.Distance(closestTarget.position, position))
+                        closestTarget = cachePos;
+                }
+            }
+        }
+        else LevelManager.instance.LoseGame();
+
+        return closestTarget;
     }
     
     void PrepareNextRound()
@@ -115,13 +131,27 @@ public class sEnemySpawner : MonoBehaviour
         spawnCount = Random.Range(min, max);
     }
 
+    IEnumerator DisplayTime()
+    {
+        float timer = timeInBetweenRounds;
+        cHudManager.instance.endOfWaveTimerText.gameObject.SetActive(true);
+        while (timer > 0)
+        {
+            timer -= Time.deltaTime;
+            float displayTimer = Mathf.Round(timer * 10) / 10;
+            cHudManager.instance.endOfWaveTimerText.text = "End of Wave Time: " + displayTimer;
+            yield return new WaitForEndOfFrame();
+        }
+        cHudManager.instance.endOfWaveTimerText.gameObject.SetActive(false);
+    }
+
     IEnumerator WaitSometime(float time, bool newRound)
     {
         waiting = true;
         yield return new WaitForSeconds(time);
         if (newRound) { 
             rounds++; 
-            cHudManager.instance.roundLevelText.text = "Round: " + rounds.ToString(); 
+            cHudManager.instance.roundLevelText.text = "Wave: " + rounds.ToString(); 
         }
         waiting = false;
     }

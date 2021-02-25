@@ -19,7 +19,7 @@ public class LevelManager : MonoBehaviour
     public GameObject playerPrefab;
     // Used for keeping track of alive player characters
     public List<sPlayerController> playerCharactersSpawned;
-    public List<sAiController> currentCache = new List<sAiController>();
+    public List<sAiController> currentCache;
     //Used for keeping track of the players money
     public float playersMoney;
 
@@ -29,6 +29,7 @@ public class LevelManager : MonoBehaviour
         {
             instance = this;
         }
+        if (Time.timeScale == 0) Time.timeScale = 1;
 
         //if (playerCharactersGlobal.Length > 0)
         //{
@@ -36,10 +37,13 @@ public class LevelManager : MonoBehaviour
         //    playerCharactersGlobalMerged = new bool[playerCharactersGlobal.Length];
         //    //playerCharactersGlobalDead = new bool[playerCharactersGlobal.Length];
         //}
-        else Debug.LogError("No player types are set up in playerCharactersGlobal on the LevelManager script.");
+        //else Debug.LogError("No player types are set up in playerCharactersGlobal on the LevelManager script.");
         playerCharactersGlobal = new List<PlayerData>();
         if (playerCharactersSpawned.Count > 0) MergeAllStartingCharacters();
         else Debug.LogError("You didn't add the players into the player characters alive");
+
+
+        currentCache = new List<sAiController>();
     }
 
 

@@ -22,6 +22,7 @@ public class cShopFunctionality : MonoBehaviour
     public Image upgradesTabButton;
     public RectTransform playerTabGrouper;
     public GameObject playerTabPrefab;
+    public AudioSource purchaseSound;
     [Header("Parameters for upgrades")]
     public float maxHealthObtainable = 500;
     public float maxDamageOutput = 100;

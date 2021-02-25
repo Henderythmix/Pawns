@@ -10,7 +10,7 @@ public class sAiController : MonoBehaviour
     public Transform destination;
     public Transform shootPoint;
     public float rotationSpeed = 1.5f;
-    [HideInInspector]public bool controlled = false;
+    [HideInInspector] public bool controlled = false;
     // For player characters
     public bool player = false;
     public bool cache = false;
@@ -35,6 +35,8 @@ public class sAiController : MonoBehaviour
     public LayerMask targetMask;
     public LayerMask obstacleMask;
     public Animator aiAnimator;
+    public AudioSource shootSound;
+    public AudioSource painSound;
 
     public List<Transform> visibleTargets;
 
@@ -47,13 +49,12 @@ public class sAiController : MonoBehaviour
     public aiState currentState;
     public float health = 0;
     public float maxHealth = 0;
-
     bool attackCooldown = false;
     bool canSeeHiddenEnemies = false;
     //bool movedIntoLevelArea = false;
     Transform originalDestination;
     public NavMeshAgent aiAgent;
-    [HideInInspector]public Quaternion orgRotation;
+    [HideInInspector] public Quaternion orgRotation;
     private void Awake()
     {
         if (viewRadius > 0)
@@ -100,7 +101,7 @@ public class sAiController : MonoBehaviour
             destination = visibleTargets[0];
         }
         else if (LevelManager.instance.playerCharactersSpawned.Count > 0 && !player)
-            destination = sEnemySpawner.instance.FindClosestTarget(transform.position); 
+            destination = sEnemySpawner.instance.FindClosestTarget(transform.position);
 
         if (currentState.Equals(aiState.COMBAT))
         {
@@ -156,7 +157,7 @@ public class sAiController : MonoBehaviour
 
             if (!attackCooldown)
             {
-                Debug.Log("Firing at enemy. I am " + gameObject.name);
+                //Debug.Log("Firing at enemy. I am " + gameObject.name);
                 if (bulletPrefab) Shoot();
                 else Melee();
                 StartCoroutine("AttackCooldown");
@@ -231,6 +232,8 @@ public class sAiController : MonoBehaviour
     public void AiTakeDamage(float damage)
     {
         //health -= damage;
+        if (painSound)
+            painSound.Play();
         if (healthBarHolder) SetHealth(-damage, false);
 
         //Debug.Log(gameObject.name + " is taking damage");
@@ -246,7 +249,8 @@ public class sAiController : MonoBehaviour
                     //Find this aiType and set it to dead
                     for (int i = 0; i < lmi.playerCharactersGlobal.Count; i++)
                     {
-                        if (lmi.playerCharactersGlobal[i].playerType.playerCharacterType == aiType) {
+                        if (lmi.playerCharactersGlobal[i].playerType.playerCharacterType == aiType)
+                        {
                             lmi.playerCharactersGlobal[i].dead = true;
                         }
                     }
@@ -260,13 +264,15 @@ public class sAiController : MonoBehaviour
             }
             else
             {
+                Debug.Log("A cache was destroyed");
                 LevelManager.instance.currentCache.Remove(this);
+                Debug.Log(LevelManager.instance.currentCache.Count);
                 if (LevelManager.instance.currentCache.Count == 0) LevelManager.instance.LoseGame();
                 else Debug.Log(LevelManager.instance.currentCache.Count);
             }
 
             // Is a player to be added to the dead
-            if (!player)
+            if (!player || cache)
                 Destroy(gameObject);
             else
                 Destroy(transform.parent.gameObject);
@@ -288,6 +294,8 @@ public class sAiController : MonoBehaviour
 
     public void Shoot()
     {
+        if (shootSound)
+            shootSound.Play();
         sBullet bullet = Instantiate(bulletPrefab).GetComponent<sBullet>();
         float dmg = aiType.damageOutput;
         if (player)
@@ -384,31 +392,32 @@ public class sAiController : MonoBehaviour
         }
         return new Vector3(Mathf.Sin(angleInDegrees * Mathf.Deg2Rad), 0, Mathf.Cos(angleInDegrees * Mathf.Deg2Rad));
     }
-
-    private void OnDrawGizmosSelected()
-    {
-        //if (turnOn)
-        //{
-        //Debug.Log(" Selected ");
-        //SFieldOfView fow = (SFieldOfView)target;
-        Handles.color = Color.white;
-        Handles.DrawWireArc(transform.position, Vector3.up, Vector3.forward, 360, viewRadius);
-        Vector3 viewAngleA = DirFromAnagle(-viewAngle / 2, false);
-        Vector3 viewAngleB = DirFromAnagle(viewAngle / 2, false);
-
-        Handles.DrawLine(transform.position, transform.position + viewAngleA * viewRadius);
-        Handles.DrawLine(transform.position, transform.position + viewAngleB * viewRadius);
-
-        Handles.color = Color.red;
-
-        if (visibleTargets.Count > 0)
-        {
-            foreach (Transform visibleTarget in visibleTargets)
-            {
-                if (visibleTarget != null)
-                    Handles.DrawLine(transform.position, visibleTarget.position);
-            }
-        }
-        //}
-    }
 }
+
+//    private void OnDrawGizmosSelected()
+//    {
+//        //if (turnOn)
+//        //{
+//        //Debug.Log(" Selected ");
+//        //SFieldOfView fow = (SFieldOfView)target;
+//        Handles.color = Color.white;
+//        Handles.DrawWireArc(transform.position, Vector3.up, Vector3.forward, 360, viewRadius);
+//        Vector3 viewAngleA = DirFromAnagle(-viewAngle / 2, false);
+//        Vector3 viewAngleB = DirFromAnagle(viewAngle / 2, false);
+
+//        Handles.DrawLine(transform.position, transform.position + viewAngleA * viewRadius);
+//        Handles.DrawLine(transform.position, transform.position + viewAngleB * viewRadius);
+
+//        Handles.color = Color.red;
+
+//        if (visibleTargets.Count > 0)
+//        {
+//            foreach (Transform visibleTarget in visibleTargets)
+//            {
+//                if (visibleTarget != null)
+//                    Handles.DrawLine(transform.position, visibleTarget.position);
+//            }
+//        }
+//        //}
+//    }
+//}
